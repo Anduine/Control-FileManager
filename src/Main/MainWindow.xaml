@@ -1,0 +1,138 @@
+﻿<Window x:Class="ControlFileManager.Main.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ControlFileManager"
+        mc:Ignorable="d"
+        Title="Control File Manager" Height="450" Width="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="4"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Left: navigation -->
+        <StackPanel Grid.Column="0" Margin="8">
+            <TextBlock Text="Drives / Navigation" FontWeight="Bold" Margin="0,0,0,8"/>
+
+            <ComboBox ItemsSource="{Binding NavigationRoots}" 
+                      SelectedItem="{Binding SelectedRoot}" 
+                      DisplayMemberPath="Name"
+                      MinHeight="14" 
+                      Width="48" 
+                      Margin="0,0,0,0" 
+                      HorizontalAlignment="Left"/>
+            <Button Content="Refresh" Command="{Binding RefreshCommand}" Width="60" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+        </StackPanel>
+
+        <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+
+        <!-- Right: files -->
+        <DockPanel Grid.Column="2" Margin="8">
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,8">
+                <Button Content="Back" Command="{Binding PrevDirCommand}" Width="40" />
+                <Button Content="Next" Command="{Binding NextDirCommand}" Width="40" Margin="8,0,0,0" />
+                <Button Content="Open" Command="{Binding OpenCommand}" Width="80" Margin="8,0,0,0" />
+                <Button Content="Delete" Command="{Binding DeleteCommand}" Width="80" Margin="8,0,0,0"/>
+                <Button Content="New folder" Command="{Binding CreateFolderCommand}" Width="80" Margin="8,0,0,0"/>
+            </StackPanel>
+
+            <DataGrid x:Name="FilesGrid"
+                      ItemsSource="{Binding CurrentItems}" 
+                      SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
+                      MouseDoubleClick="FilesGrid_MouseDoubleClick"
+                      CellEditEnding="FilesGrid_CellEditEnding"
+                      KeyDown="FilesGrid_PreviewKeyDown"
+                      GridLinesVisibility="Horizontal"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False" 
+                      RowHeaderWidth="0"
+                      IsReadOnly="True">
+
+
+                <DataGrid.ContextMenu>
+                    <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+
+                        <ContextMenu.Resources>
+                            <!-- Когда есть выбранный файл/папка -->
+                            <Style x:Key="ItemActions" TargetType="MenuItem">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedItem}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+
+                            <!-- Когда НЕТ выбранного файла/папки (кликнули по пустому месту) -->
+                            <Style x:Key="NoItemActions" TargetType="MenuItem">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedItem}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+
+                        </ContextMenu.Resources>
+
+                        <!--  File/folder actions  -->
+                        <MenuItem Header="Відкрити"
+                  Style="{StaticResource ItemActions}"
+                  Command="{Binding OpenCommand}"/>
+
+                        <MenuItem Header="Копіювати"
+                  Style="{StaticResource ItemActions}"
+                  Command="{Binding CopyCommand}"/>
+
+                        <MenuItem Header="Вирізати"
+                  Style="{StaticResource ItemActions}"
+                  Command="{Binding CutCommand}"/>
+
+                        <MenuItem Header="Видалити"
+                  Style="{StaticResource ItemActions}"
+                  Command="{Binding DeleteCommand}"/>
+
+                        <MenuItem Header="Перейменувати"
+                  Style="{StaticResource ItemActions}"
+                  Command="{Binding RenameCommand}"/>
+
+                        <Separator/>
+
+                        <MenuItem Header="Властивості"
+                  Style="{StaticResource ItemActions}"
+                  Command="{Binding ShowPropertiesCommand}"/>
+
+                        <!--  When NO selection (empty area) -->
+
+                        <MenuItem Header="Вставити"
+                  Style="{StaticResource NoItemActions}"
+                  Command="{Binding PasteCommand}"/>
+
+                        <MenuItem Header="Створити папку"
+                  Style="{StaticResource NoItemActions}"
+                  Command="{Binding CreateFolderCommand}"/>
+
+                        <MenuItem Header="Властивості"
+                  Style="{StaticResource NoItemActions}"
+                  Command="{Binding ShowPropertiesCommand}"/>
+
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
+
+                <DataGrid.Columns>
+                    <DataGridTextColumn Binding="{Binding Name}" Header="Name"
+                    IsReadOnly="False"
+                    x:Name="Name"
+                    Width="*">
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Type" Binding="{Binding IsDirectory}" Width="80"/>
+                    <DataGridTextColumn Header="Size" Binding="{Binding Size}" Width="100"/>
+                    <DataGridTextColumn Header="Modified" Binding="{Binding LastModified}" Width="160"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </DockPanel>
+    </Grid>
+</Window>
