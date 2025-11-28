@@ -5,7 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ControlFileManager"
         mc:Ignorable="d"
-        Title="Control File Manager" Height="450" Width="800">
+        Title="Control File Manager" Height="450" Width="800"
+        
+        PreviewMouseDown="Window_PreviewMouseDown">
+    
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="220"/>
@@ -25,6 +28,7 @@
                       Margin="0,0,0,0" 
                       HorizontalAlignment="Left"/>
             <Button Content="Refresh" Command="{Binding RefreshCommand}" Width="60" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+            <TextBlock x:Name="StatusTb" TextWrapping="Wrap" Text="Status" Margin="0,200,0,0" VerticalAlignment="Bottom"/>
         </StackPanel>
 
         <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
@@ -44,7 +48,7 @@
                       SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
                       MouseDoubleClick="FilesGrid_MouseDoubleClick"
                       CellEditEnding="FilesGrid_CellEditEnding"
-                      KeyDown="FilesGrid_PreviewKeyDown"
+                      PreviewKeyDown="FilesGrid_PreviewKeyDown"
                       GridLinesVisibility="Horizontal"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False" 

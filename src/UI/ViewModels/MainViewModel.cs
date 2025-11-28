@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-
+using System.Windows.Controls;
 using ControlFileManager.Core.Models;
 using ControlFileManager.Core.Services;
 using ControlFileManager.UI.Commands;
@@ -17,7 +18,7 @@ namespace ControlFileManager.UI.ViewModels
         private readonly IFileSystemService _fs;
         private CancellationTokenSource? _cts;
 
-        private string _lastNameBeforeRename;
+        internal TextBlock StatusTb;
 
         public ObservableCollection<FileItem> NavigationRoots { get; } = new();
         public ObservableCollection<FileItem> CurrentItems { get; } = new();
@@ -29,7 +30,8 @@ namespace ControlFileManager.UI.ViewModels
             set { 
                 _selectedRoot = value; 
                 Raise(); 
-                if (value != null) LoadDirectory(value.FullPath);
+                if (value != null)
+                    NavigateTo(value.FullPath);
 
                 CreateFolderCommand.RaiseCanExecuteChanged();
             }
@@ -45,6 +47,33 @@ namespace ControlFileManager.UI.ViewModels
 
                 DeleteCommand.RaiseCanExecuteChanged();
                 OpenCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        private readonly Stack<string> _backHistory = new();
+        private readonly Stack<string> _forwardHistory = new();
+
+        private string _currentPath;
+
+        public string CurrentPath
+        {
+            get => _currentPath;
+            set
+            {
+                _currentPath = value;
+                Raise();
+                LoadDirectory(_currentPath);
+
+                PrevDirCommand.RaiseCanExecuteChanged();
+                NextDirCommand.RaiseCanExecuteChanged();
+
+                string resText = ""; 
+
+                foreach (var text in _backHistory.ToArray()) {
+                    resText += text + "\n";
+                }
+
+                StatusTb.Text = resText;
             }
         }
 
@@ -75,14 +104,46 @@ namespace ControlFileManager.UI.ViewModels
             CreateFolderCommand = new RelayCommand(_ => CreateFolder(), _ => SelectedRoot != null);
             ShowPropertiesCommand = new RelayCommand(_ => ShowProperties(), _ => SelectedItem != null);
 
-            PrevDirCommand = new RelayCommand(_ => CreateFolder(), _ => SelectedRoot != null);
-            NextDirCommand = new RelayCommand(_ => CreateFolder(), _ => SelectedRoot != null);
+            PrevDirCommand = new RelayCommand(_ => PrevDir(), _ => _backHistory.Count > 0);
+            NextDirCommand = new RelayCommand(_ => NextDir(), _ => _forwardHistory.Count > 0);
 
             // initial load
             _ = RefreshRoots();
         }
 
-        public async Task RefreshRoots()
+        public void NavigateTo(string path)
+        {
+            if (!string.IsNullOrEmpty(CurrentPath))
+                _backHistory.Push(CurrentPath);
+
+            _forwardHistory.Clear();
+
+            CurrentPath = path;
+        }
+
+        public async Task RenameSelected(string newName)
+        {
+            if (SelectedItem is null || string.IsNullOrWhiteSpace(newName))
+                return;
+
+            try
+            {
+                var updated = await _fs.RenameAsync(SelectedItem.FullPath, newName);
+
+                // заменить элемент в коллекции
+                int index = CurrentItems.IndexOf(SelectedItem);
+                if (index >= 0)
+                    CurrentItems[index] = updated;
+
+                SelectedItem = updated;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Не вдалося перейменувати: {ex.Message}");
+            }
+        }
+
+        private async Task RefreshRoots()
         {
             _cts?.Cancel();
             _cts = new CancellationTokenSource();
@@ -99,7 +160,7 @@ namespace ControlFileManager.UI.ViewModels
             }
         }
 
-        public async Task LoadDirectory(string path)
+        private async Task LoadDirectory(string path)
         {
             _cts?.Cancel();
             _cts = new CancellationTokenSource();
@@ -123,8 +184,7 @@ namespace ControlFileManager.UI.ViewModels
             {
                 if (SelectedItem.IsDirectory)
                 {
-                    SelectedRoot = SelectedItem;
-                    LoadDirectory(SelectedRoot.FullPath);
+                    NavigateTo(SelectedItem.FullPath);
                 }
                 else
                 {
@@ -149,7 +209,9 @@ namespace ControlFileManager.UI.ViewModels
                 var ok = MessageBox.Show($"Видалити {SelectedItem.Name}?", "Підтвердження", MessageBoxButton.YesNo) == MessageBoxResult.Yes;
                 if (!ok) return;
                 await _fs.DeleteAsync(SelectedItem.FullPath);
-                if (SelectedRoot != null) await LoadDirectory(SelectedRoot.FullPath);
+
+                if (SelectedRoot != null) 
+                    await LoadDirectory(CurrentPath);
             }
             catch (Exception ex)
             {
@@ -157,45 +219,11 @@ namespace ControlFileManager.UI.ViewModels
             }
         }
 
-        public void BeginRename()
+        private void BeginRename()
         {
             if (SelectedItem != null)
             {
-                _lastNameBeforeRename = SelectedItem.Name;
                 RenameRequested?.Invoke(this, EventArgs.Empty);
-            }
-        }
-
-        public string getLastName()
-        {
-            if (!string.IsNullOrEmpty(_lastNameBeforeRename))
-            {
-                _lastNameBeforeRename = string.Empty;
-                return _lastNameBeforeRename;
-            }
-
-            return string.Empty;
-        }
-
-        public async Task RenameSelected(string newName)
-        {
-            if (SelectedItem is null || string.IsNullOrWhiteSpace(newName))
-                return;
-
-            try
-            {
-                var updated = await _fs.RenameAsync(SelectedItem.FullPath, newName);
-
-                // заменить элемент в коллекции
-                int index = CurrentItems.IndexOf(SelectedItem);
-                if (index >= 0)
-                    CurrentItems[index] = updated;
-
-                SelectedItem = updated;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Не вдалося перейменувати: {ex.Message}");
             }
         }
 
@@ -225,10 +253,10 @@ namespace ControlFileManager.UI.ViewModels
                 && files.Length > 0)
             {
                 string src = files[0];
-                string dst = Path.Combine(SelectedRoot.FullPath, Path.GetFileName(src));
+                string dst = Path.Combine(CurrentPath, Path.GetFileName(src));
 
                 await _fs.CopyAsync(src, dst);
-                await LoadDirectory(SelectedRoot.FullPath);
+                await LoadDirectory(CurrentPath);
             }
         }
 
@@ -238,8 +266,8 @@ namespace ControlFileManager.UI.ViewModels
             var name = "Нова папка";
             try
             {
-                await _fs.CreateDirectoryAsync(SelectedRoot.FullPath, name);
-                await LoadDirectory(SelectedRoot.FullPath);
+                await _fs.CreateDirectoryAsync(CurrentPath, name);
+                await LoadDirectory(CurrentPath);
             }
             catch (Exception ex)
             {
@@ -259,8 +287,20 @@ namespace ControlFileManager.UI.ViewModels
 
         private void PrevDir()
         {
-            if (SelectedRoot == null) return;
-            
+            if (_backHistory.Count == 0)
+                return;
+
+            _forwardHistory.Push(CurrentPath);
+            CurrentPath = _backHistory.Pop();
+        }
+
+        private void NextDir()
+        {
+            if (_forwardHistory.Count == 0)
+                return;
+
+            _backHistory.Push(CurrentPath);
+            CurrentPath = _forwardHistory.Pop();
         }
     }
 }

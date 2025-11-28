@@ -1,5 +1,4 @@
 ﻿using System;
-using ControlFileManager.UI.ViewModels;
 
 namespace ControlFileManager.Core.Models
 {

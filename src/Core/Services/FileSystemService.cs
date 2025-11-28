@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using ControlFileManager.Core.Models;
 using ControlFileManager.Core.Services;
 
