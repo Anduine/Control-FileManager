@@ -81,7 +81,7 @@
 
                 <TextBox Grid.Column="1"
                          x:Name="CurrentPathTb"
-                         Text="{Binding CurrentPath, Mode=TwoWay}"
+                         Text="{Binding CurrentPath, Mode=OneWay}"
                          KeyUp="CurrentPathTb_KeyUp" />
             </Grid>
 

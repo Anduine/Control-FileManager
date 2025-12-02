@@ -4,9 +4,9 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+
 using ControlFileManager.Core.Models;
 using ControlFileManager.Core.Services;
 using ControlFileManager.UI.Commands;
@@ -22,6 +22,20 @@ namespace ControlFileManager.UI.ViewModels
 
         public ObservableCollection<FileItem> NavigationRoots { get; } = new();
         public ObservableCollection<FileItem> CurrentItems { get; } = new();
+
+        private bool _showHidden;
+        public bool ShowHidden
+        {
+            get => _showHidden;
+            set { _showHidden = value; Raise(); LoadDirectory(CurrentPath); }
+        }
+
+        private bool _showSystem;
+        public bool ShowSystem
+        {
+            get => _showSystem;
+            set { _showSystem = value; Raise(); LoadDirectory(CurrentPath); }
+        }
 
         private FileItem? _selectedRoot;
         public FileItem? SelectedRoot
@@ -45,6 +59,8 @@ namespace ControlFileManager.UI.ViewModels
                 _selectedItem = value; 
                 Raise();
 
+                StatusTb.Text = _selectedItem?.CreatedTime.ToString();
+
                 DeleteCommand.RaiseCanExecuteChanged();
                 OpenCommand.RaiseCanExecuteChanged();
             }
@@ -54,7 +70,6 @@ namespace ControlFileManager.UI.ViewModels
         private readonly Stack<string> _forwardHistory = new();
 
         private string _currentPath;
-
         public string CurrentPath
         {
             get => _currentPath;
@@ -62,18 +77,6 @@ namespace ControlFileManager.UI.ViewModels
             {
                 _currentPath = value;
                 Raise();
-                LoadDirectory(_currentPath);
-
-                PrevDirCommand.RaiseCanExecuteChanged();
-                NextDirCommand.RaiseCanExecuteChanged();
-
-                string resText = ""; 
-
-                foreach (var text in _backHistory.ToArray()) {
-                    resText += text + "\n";
-                }
-
-                StatusTb.Text = resText;
             }
         }
 
@@ -98,30 +101,42 @@ namespace ControlFileManager.UI.ViewModels
             OpenCommand = new RelayCommand(_ => OpenSelected(), _ => SelectedItem != null);
             DeleteCommand = new RelayCommand(_ => DeleteSelected(), _ => SelectedItem != null);
             RenameCommand = new RelayCommand(_ => BeginRename(), _ => SelectedItem != null);
+
             CopyCommand = new RelayCommand(_ => CopySelected(), _ => SelectedItem != null);
             CutCommand = new RelayCommand(_ => CutSelected(), _ => SelectedItem != null);
             PasteCommand = new RelayCommand(_ => PasteIntoCurrent(), _ => ClipboardContainsPath());
+
             CreateFolderCommand = new RelayCommand(_ => CreateFolder(), _ => SelectedRoot != null);
             ShowPropertiesCommand = new RelayCommand(_ => ShowProperties(), _ => SelectedItem != null);
 
             PrevDirCommand = new RelayCommand(_ => PrevDir(), _ => _backHistory.Count > 0);
             NextDirCommand = new RelayCommand(_ => NextDir(), _ => _forwardHistory.Count > 0);
 
-            // initial load
-            _ = RefreshRoots();
+            RefreshRoots();
         }
 
         public void NavigateTo(string path)
         {
+            if (!Directory.Exists(path))
+            {
+                MessageBox.Show($"Каталог {path} не існує");
+                return;
+            }
+
             if (!string.IsNullOrEmpty(CurrentPath))
                 _backHistory.Push(CurrentPath);
 
             _forwardHistory.Clear();
 
             CurrentPath = path;
+
+            LoadDirectory(_currentPath);
+
+            PrevDirCommand.RaiseCanExecuteChanged();
+            NextDirCommand.RaiseCanExecuteChanged();
         }
 
-        public async Task RenameSelected(string newName)
+        public async void RenameSelected(string newName)
         {
             if (SelectedItem is null || string.IsNullOrWhiteSpace(newName))
                 return;
@@ -130,7 +145,6 @@ namespace ControlFileManager.UI.ViewModels
             {
                 var updated = await _fs.RenameAsync(SelectedItem.FullPath, newName);
 
-                // заменить элемент в коллекции
                 int index = CurrentItems.IndexOf(SelectedItem);
                 if (index >= 0)
                     CurrentItems[index] = updated;
@@ -139,11 +153,11 @@ namespace ControlFileManager.UI.ViewModels
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Не вдалося перейменувати: {ex.Message}");
+                MessageBox.Show("Не вдалося перейменувати:" + ex.Message);
             }
         }
 
-        private async Task RefreshRoots()
+        private async void RefreshRoots()
         {
             _cts?.Cancel();
             _cts = new CancellationTokenSource();
@@ -160,19 +174,27 @@ namespace ControlFileManager.UI.ViewModels
             }
         }
 
-        private async Task LoadDirectory(string path)
+        private async void LoadDirectory(string path)
         {
             _cts?.Cancel();
             _cts = new CancellationTokenSource();
+
+            IEnumerable<FileItem> newItems;
+
             try
             {
-                CurrentItems.Clear();
-                var items = await _fs.GetDirectoryItemsAsync(path, _cts.Token);
-                foreach (var it in items) CurrentItems.Add(it);
+                newItems = await _fs.GetDirectoryItemsAsync(path, ShowHidden, ShowSystem, _cts.Token);
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Помилка читання папки: " + ex.Message);
+                return;
+            }
+
+            CurrentItems.Clear();
+            foreach (var item in newItems) 
+            {
+                CurrentItems.Add(item);
             }
         }
 
@@ -210,8 +232,7 @@ namespace ControlFileManager.UI.ViewModels
                 if (!ok) return;
                 await _fs.DeleteAsync(SelectedItem.FullPath);
 
-                if (SelectedRoot != null) 
-                    await LoadDirectory(CurrentPath);
+                LoadDirectory(CurrentPath);
             }
             catch (Exception ex)
             {
@@ -256,18 +277,19 @@ namespace ControlFileManager.UI.ViewModels
                 string dst = Path.Combine(CurrentPath, Path.GetFileName(src));
 
                 await _fs.CopyAsync(src, dst);
-                await LoadDirectory(CurrentPath);
+                LoadDirectory(CurrentPath);
             }
         }
 
         private async void CreateFolder()
         {
             if (SelectedRoot == null) return;
-            var name = "Нова папка";
+            const string name = "Нова папка";
+
             try
             {
                 await _fs.CreateDirectoryAsync(CurrentPath, name);
-                await LoadDirectory(CurrentPath);
+                LoadDirectory(CurrentPath);
             }
             catch (Exception ex)
             {
@@ -279,9 +301,11 @@ namespace ControlFileManager.UI.ViewModels
         {
             if (SelectedItem == null) return;
 
-            var psi = new ProcessStartInfo("explorer.exe");
-            psi.Arguments = $"/select,\"{SelectedItem.FullPath}\"";
-            psi.UseShellExecute = true;
+            var psi = new ProcessStartInfo("explorer.exe")
+            {
+                Arguments = $"/select,\"{SelectedItem.FullPath}\"",
+                UseShellExecute = true
+            };
             Process.Start(psi);
         }
 
@@ -292,6 +316,10 @@ namespace ControlFileManager.UI.ViewModels
 
             _forwardHistory.Push(CurrentPath);
             CurrentPath = _backHistory.Pop();
+            LoadDirectory(CurrentPath);
+
+            PrevDirCommand.RaiseCanExecuteChanged();
+            NextDirCommand.RaiseCanExecuteChanged();
         }
 
         private void NextDir()
@@ -301,6 +329,10 @@ namespace ControlFileManager.UI.ViewModels
 
             _backHistory.Push(CurrentPath);
             CurrentPath = _forwardHistory.Pop();
+            LoadDirectory(CurrentPath);
+
+            PrevDirCommand.RaiseCanExecuteChanged();
+            NextDirCommand.RaiseCanExecuteChanged();
         }
     }
 }

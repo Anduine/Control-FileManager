@@ -28,25 +28,43 @@ namespace FileManager.Core.Services
             }, ct);
         
 
-        public Task<IEnumerable<FileItem>> GetDirectoryItemsAsync(string path, CancellationToken ct = default) =>
+        public Task<IEnumerable<FileItem>> GetDirectoryItemsAsync(
+            string path, 
+            bool showHidden,
+            bool showSystem, 
+            CancellationToken ct = default) =>
             Task.Run(() =>
             {
-                var list = new List<FileItem>();
                 try
                 {
+                    var list = new List<FileItem>();
                     var dirInfo = new DirectoryInfo(path);
 
                     // directories
                     foreach (var d in dirInfo.EnumerateDirectories())
                     {
                         if (ct.IsCancellationRequested) break;
+
+                        var attrs = d.Attributes;
+
+                        bool isHidden = attrs.HasFlag(FileAttributes.Hidden);
+                        bool isSystem = attrs.HasFlag(FileAttributes.System);
+                        bool isReadOnly = attrs.HasFlag(FileAttributes.ReadOnly);
+
+                        if (!showHidden && isHidden) continue;
+                        if (!showSystem && isSystem) continue;
+
                         list.Add(new FileItem
                         {
                             Name = d.Name,
                             FullPath = d.FullName,
                             IsDirectory = true,
                             Size = null,
-                            LastModified = d.LastWriteTime
+                            CreatedTime = d.CreationTime,
+                            LastModified = d.LastWriteTime,
+                            IsHidden = isHidden,
+                            IsSystem = isSystem,
+                            IsReadOnly = isReadOnly
                         });
                     }
 
@@ -54,21 +72,35 @@ namespace FileManager.Core.Services
                     foreach (var f in dirInfo.EnumerateFiles())
                     {
                         if (ct.IsCancellationRequested) break;
+
+                        var attrs = f.Attributes;
+
+                        bool isHidden = attrs.HasFlag(FileAttributes.Hidden);
+                        bool isSystem = attrs.HasFlag(FileAttributes.System);
+                        bool isReadOnly = attrs.HasFlag(FileAttributes.ReadOnly);
+
+                        if (!showHidden && isHidden) continue;
+                        if (!showSystem && isSystem) continue;
+
                         list.Add(new FileItem
                         {
                             Name = f.Name,
                             FullPath = f.FullName,
                             IsDirectory = false,
                             Size = f.Length,
-                            LastModified = f.LastWriteTime
+                            CreatedTime = f.CreationTime,
+                            LastModified = f.LastWriteTime,
+                            IsHidden = isHidden,
+                            IsSystem = isSystem,
+                            IsReadOnly = isReadOnly
                         });
                     }
+                    return (IEnumerable<FileItem>)list;
                 }
-                catch (Exception)
+                catch (DirectoryNotFoundException)
                 {
-                    // propagate or return empty — for brevity повернемо пустий список
+                    throw;
                 }
-                return (IEnumerable<FileItem>)list;
             }, ct);
 
         public Task CreateDirectoryAsync(string parentPath, string name, CancellationToken ct = default) =>
@@ -97,8 +129,6 @@ namespace FileManager.Core.Services
 
                 if (Directory.Exists(sourcePath))
                 {
-                    
-
                     CopyDirectoryRecursive(sourcePath, destinationPath, overwrite);
                 }
                 else
@@ -106,6 +136,7 @@ namespace FileManager.Core.Services
                     var destDir = Path.GetDirectoryName(destinationPath);
                     if (!string.IsNullOrEmpty(destDir) && !Directory.Exists(destDir))
                         Directory.CreateDirectory(destDir);
+
                     File.Copy(sourcePath, destinationPath, overwrite);
                 }
             }, ct);
@@ -128,21 +159,17 @@ namespace FileManager.Core.Services
 
                 string newFull = Path.Combine(parent, newName);
 
-                // Ничего не меняется
-                if (oldFull.Equals(newFull, StringComparison.OrdinalIgnoreCase))
-                    return CreateItemFromPath(oldFull);
+                if (!oldFull.Equals(newFull, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (Directory.Exists(oldFull))
+                        Directory.Move(oldFull, newFull);
+                    else
+                        File.Move(oldFull, newFull);
 
-                // Такой файл уже есть
-                if (File.Exists(newFull) || Directory.Exists(newFull))
-                    throw new IOException("Цільовий шлях вже існує.");
+                    return CreateItemFromPath(newFull);
+                }
 
-                // Выполняем перенос
-                if (Directory.Exists(oldFull))
-                    Directory.Move(oldFull, newFull);
-                else
-                    File.Move(oldFull, newFull);
-
-                return CreateItemFromPath(newFull);
+                return CreateItemFromPath(oldFull);
 
             }, ct);
         

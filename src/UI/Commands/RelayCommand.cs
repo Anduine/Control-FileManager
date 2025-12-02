@@ -18,10 +18,12 @@ namespace ControlFileManager.UI.Commands
         public bool CanExecute(object? parameter) { 
             return _canExecute == null || _canExecute(parameter); 
         }
+
         public void Execute(object? parameter) 
         { 
             _execute(parameter); 
         }
+
         public void RaiseCanExecuteChanged()
         {
             CanExecuteChanged?.Invoke(this, EventArgs.Empty);
