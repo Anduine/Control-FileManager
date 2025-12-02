@@ -32,7 +32,6 @@ namespace ControlFileManager.Main
         {
             var vm = DataContext as MainViewModel;
 
-            // XButton1 = Back
             if (e.ChangedButton == MouseButton.XButton1)
             {
                 if (vm.PrevDirCommand.CanExecute(null))
@@ -41,8 +40,6 @@ namespace ControlFileManager.Main
                     e.Handled = true;
                 }
             }
-
-            // XButton2 = Forward
             else if (e.ChangedButton == MouseButton.XButton2)
             {
                 if (vm.NextDirCommand.CanExecute(null))
@@ -74,15 +71,10 @@ namespace ControlFileManager.Main
             //MessageBox.Show(e.Key.ToString());
             if (e.Key == Key.Enter)
             {
-                _renameConfirmed = true;
-
-                //if (FilesGrid.CommitEdit(DataGridEditingUnit.Cell, true))
-                //    MessageBox.Show("CommitEdit отработало");
 
                 FilesGrid.CommitEdit(DataGridEditingUnit.Cell, true);
-                FilesGrid.CommitEdit(DataGridEditingUnit.Row, true);
 
-                MessageBox.Show("Ветка Key.Enter");
+                //MessageBox.Show("Ветка Key.Enter");
 
                 e.Handled = true;
             }
@@ -90,12 +82,10 @@ namespace ControlFileManager.Main
             {
                 _renameConfirmed = false;
 
-                //if (FilesGrid.CancelEdit())
 
-                FilesGrid.CancelEdit(DataGridEditingUnit.Row);
                 FilesGrid.CancelEdit(DataGridEditingUnit.Cell);
 
-                //MessageBox.Show("Ветка Key.Escape");
+                MessageBox.Show("Ветка Key.Escape");
 
                 e.Handled = true;
 
@@ -103,7 +93,7 @@ namespace ControlFileManager.Main
             }
         }
 
-        private async void FilesGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        private void FilesGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
         {
             if (e.Column.Header?.ToString() != "Name")
                 return;
@@ -114,22 +104,6 @@ namespace ControlFileManager.Main
             if (!_renameConfirmed)
             {
                 e.Cancel = true;
-
-                if (fileItem != null && _oldName != fileItem.Name)
-                {
-                    var index = vm.CurrentItems.IndexOf(fileItem);
-                    if (index >= 0)
-                    {
-                        // Створюємо новий FileItem зі старим ім'ям
-                        var oldItem = fileItem with { Name = _oldName };
-                        vm.CurrentItems[index] = oldItem;
-                        vm.SelectedItem = oldItem; // Оновлюємо SelectedItem на новий об'єкт
-                    }
-                }
-
-                e.EditingElement.Visibility = Visibility.Collapsed;
-
-                _renameConfirmed = false;
 
                 FilesGrid.IsReadOnly = true;
                 return;
@@ -143,28 +117,27 @@ namespace ControlFileManager.Main
                 {
                     e.Cancel = true;
 
-                    if (fileItem != null && _oldName != fileItem.Name)
-                    {
-                        var index = vm.CurrentItems.IndexOf(fileItem);
-                        if (index >= 0)
-                        {
-                            var oldItem = fileItem with { Name = _oldName };
-                            vm.CurrentItems[index] = oldItem;
-                            vm.SelectedItem = oldItem;
-                        }
-                    }
+                    FilesGrid.IsReadOnly = true;
                     return;
                 }
                 else
                 {
-                    e.Cancel = true;
-                    await vm.RenameSelected(newName);
+                    vm.RenameSelected(newName);
                 }
             }
 
             _renameConfirmed = false;
 
             FilesGrid.IsReadOnly = true;
+        }
+
+        private void CurrentPathTb_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                var vm = DataContext as MainViewModel;
+                vm.NavigateTo(CurrentPathTb.Text.Trim());
+            }
         }
     }
 }

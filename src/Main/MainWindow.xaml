@@ -6,42 +6,84 @@
         xmlns:local="clr-namespace:ControlFileManager"
         mc:Ignorable="d"
         Title="Control File Manager" Height="450" Width="800"
-        
         PreviewMouseDown="Window_PreviewMouseDown">
-    
+
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220"/>
-            <ColumnDefinition Width="4"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="95"/>
+            <ColumnDefinition Width="9"/>
+            <ColumnDefinition/>
         </Grid.ColumnDefinitions>
 
-        <!-- Left: navigation -->
-        <StackPanel Grid.Column="0" Margin="8">
-            <TextBlock Text="Drives / Navigation" FontWeight="Bold" Margin="0,0,0,8"/>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
 
-            <ComboBox ItemsSource="{Binding NavigationRoots}" 
-                      SelectedItem="{Binding SelectedRoot}" 
-                      DisplayMemberPath="Name"
-                      MinHeight="14" 
-                      Width="48" 
-                      Margin="0,0,0,0" 
-                      HorizontalAlignment="Left"/>
-            <Button Content="Refresh" Command="{Binding RefreshCommand}" Width="60" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+        <Menu Grid.ColumnSpan="3" Grid.Row="0" Cursor="">
+            <MenuItem Header="_Файл" />
+            <MenuItem Header="_Правка" />
+                <MenuItem Header="_Вид">
+                <MenuItem Header="Показувати приховані"
+                          IsCheckable="True"
+                          IsChecked="{Binding ShowHidden, Mode=TwoWay}" />
+
+                <MenuItem Header="Показувати системні"
+                          IsCheckable="True"
+                          IsChecked="{Binding ShowSystem, Mode=TwoWay}" />
+            </MenuItem>
+        </Menu>
+
+        <!-- Left -->
+        <StackPanel Grid.Column="0" Grid.Row="1" Margin="8,8,8,8">
+            <TextBlock Text="Navigation" FontWeight="Bold" Margin="0,0,0,8"/>
             <TextBlock x:Name="StatusTb" TextWrapping="Wrap" Text="Status" Margin="0,200,0,0" VerticalAlignment="Bottom"/>
         </StackPanel>
 
-        <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        <GridSplitter Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" Margin="0,0,2,0"/>
 
-        <!-- Right: files -->
-        <DockPanel Grid.Column="2" Margin="8">
-            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,8">
-                <Button Content="Back" Command="{Binding PrevDirCommand}" Width="40" />
-                <Button Content="Next" Command="{Binding NextDirCommand}" Width="40" Margin="8,0,0,0" />
-                <Button Content="Open" Command="{Binding OpenCommand}" Width="80" Margin="8,0,0,0" />
-                <Button Content="Delete" Command="{Binding DeleteCommand}" Width="80" Margin="8,0,0,0"/>
-                <Button Content="New folder" Command="{Binding CreateFolderCommand}" Width="80" Margin="8,0,0,0"/>
-            </StackPanel>
+        <!-- Right -->
+        <DockPanel Grid.Column="2" Grid.Row="1" Margin="8,8,8,8">
+            <Grid DockPanel.Dock="Top" Margin="0 0 0 8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" Grid.Column="0">
+                    <Button Content="Back" Command="{Binding PrevDirCommand}" Width="60"/>
+                    <Button Content="Next" Command="{Binding NextDirCommand}" Width="60" Margin="8 0 0 0"/>
+                    <Button Content="Open" Command="{Binding OpenCommand}" Width="60" Margin="8 0 0 0"/>
+                    <Button Content="Delete" Command="{Binding DeleteCommand}" Width="60" Margin="8 0 0 0"/>
+                    <Button Content="New folder" Command="{Binding CreateFolderCommand}" Width="80" Margin="8 0 0 0"/>
+                </StackPanel>
+
+                <Button Content="Refresh"
+                        Command="{Binding RefreshCommand}"
+                        Grid.Column="1"
+                        MinWidth="70"
+                        HorizontalAlignment="Right"/>
+            </Grid>
+
+
+            <Grid DockPanel.Dock="Top" Margin="0 0 0 8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <ComboBox Grid.Column="0"
+                          ItemsSource="{Binding NavigationRoots}"
+                          SelectedItem="{Binding SelectedRoot}"
+                          DisplayMemberPath="Name"
+                          Width="50"
+                          Margin="0,0,8,0" />
+
+                <TextBox Grid.Column="1"
+                         x:Name="CurrentPathTb"
+                         Text="{Binding CurrentPath, Mode=TwoWay}"
+                         KeyUp="CurrentPathTb_KeyUp" />
+            </Grid>
 
             <DataGrid x:Name="FilesGrid"
                       ItemsSource="{Binding CurrentItems}" 
@@ -60,7 +102,7 @@
                     <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
 
                         <ContextMenu.Resources>
-                            <!-- Когда есть выбранный файл/папка -->
+                            <!--  File/folder actions  -->
                             <Style x:Key="ItemActions" TargetType="MenuItem">
                                 <Setter Property="Visibility" Value="Visible"/>
                                 <Style.Triggers>
@@ -70,7 +112,7 @@
                                 </Style.Triggers>
                             </Style>
 
-                            <!-- Когда НЕТ выбранного файла/папки (кликнули по пустому месту) -->
+                            <!--  When NO selection (empty area) -->
                             <Style x:Key="NoItemActions" TargetType="MenuItem">
                                 <Setter Property="Visibility" Value="Collapsed"/>
                                 <Style.Triggers>
