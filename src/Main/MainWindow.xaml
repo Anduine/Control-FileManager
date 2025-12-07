@@ -6,63 +6,63 @@
         xmlns:local="clr-namespace:ControlFileManager" 
         xmlns:views="clr-namespace:ControlFileManager.UI.Views" 
         xmlns:viewmodels="clr-namespace:ControlFileManager.UI.ViewModels" 
-        d:DataContext="{d:DesignInstance Type=viewmodels:MainViewModel}"
         mc:Ignorable="d"
-        Title="Control File Manager" Height="450" Width="800">
+        d:DataContext="{d:DesignInstance Type=viewmodels:MainViewModel}"
+        Title="Control File Manager" Height="800" Width="1600">
 
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="95"/>
-            <ColumnDefinition Width="5"/>
-            <ColumnDefinition/>
-        </Grid.ColumnDefinitions>
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="95"/>
+      <ColumnDefinition Width="5"/>
+      <ColumnDefinition/>
+    </Grid.ColumnDefinitions>
 
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition/>
-        </Grid.RowDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition/>
+    </Grid.RowDefinitions>
 
-        <Menu Grid.ColumnSpan="3" Grid.Row="0" Cursor="">
-            <MenuItem Header="_Файл">
-                <MenuItem Header="Показувати приховані"
-                          IsCheckable="True"
-                          IsChecked="{Binding ShowHidden, Mode=TwoWay}" />
+    <Menu Grid.ColumnSpan="3" Grid.Row="0" Cursor="">
+      <MenuItem Header="_Файл">
+        <MenuItem Header="Показувати приховані"
+                  IsCheckable="True"
+                  IsChecked="{Binding ShowHidden, Mode=TwoWay}" />
 
-                <MenuItem Header="Показувати системні"
-                          IsCheckable="True"
-                          IsChecked="{Binding ShowSystem, Mode=TwoWay}" />
-            </MenuItem>
-            <MenuItem Header="_Правка">
-                <MenuItem Header="Пусто" />
-            </MenuItem>
-            <MenuItem Header="_Вид">
-                <MenuItem Header="Пусто" />
-            </MenuItem>
-        </Menu>
+        <MenuItem Header="Показувати системні"
+                  IsCheckable="True"
+                  IsChecked="{Binding ShowSystem, Mode=TwoWay}" />
+      </MenuItem>
+      
+      <MenuItem Header="_Правка">
+        <MenuItem Header="Пусто" />
+      </MenuItem>
+      
+      <MenuItem Header="_Вид">
+        <MenuItem Header="Пусто" />
+      </MenuItem>
+    </Menu>
 
-        <!-- Left -->
-        <StackPanel Grid.Column="0" Grid.Row="1" Margin="8,8,8,8">
-            <TextBlock Text="Navigation" FontWeight="Bold" Margin="0,0,0,8"/>
-            <Button Command="{Binding AddPanelCommand}" Content="+ Panel" Margin="0,0,0,8"/>
-            <Button Command="{Binding RemovePanelCommand}" Content="- Panel"/>
-            <TextBlock x:Name="StatusTb" TextWrapping="Wrap" Text="Status" Margin="0,200,0,0" VerticalAlignment="Bottom"/>
-        </StackPanel>
+    <StackPanel Grid.Column="0" Grid.Row="1" Margin="8,8,8,8">
+      <TextBlock Text="Navigation" FontWeight="Bold" Margin="0,0,0,8"/>
+      <Button Command="{Binding AddPanelCommand}" Content="+ Panel" Margin="0,0,0,8"/>
+      <Button Command="{Binding RemovePanelCommand}" Content="- Panel"/>
+      <TextBlock x:Name="StatusTb" TextWrapping="Wrap" Text="Status" Margin="0,200,0,0" VerticalAlignment="Bottom"/>
+    </StackPanel>
 
-        <GridSplitter Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" Margin="0,0,2,0"/>
+    <GridSplitter Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" Margin="0,0,2,0"/>
 
-        <!-- Right -->
-        <ItemsControl Grid.Column="2" Grid.Row="1" ItemsSource="{Binding Panels}">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <UniformGrid Rows="1" />
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
+    <ItemsControl Grid.Column="2" Grid.Row="1" ItemsSource="{Binding Panels}">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <UniformGrid Rows="1" />
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
 
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <views:FilePanelView/>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
-    </Grid>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <views:FilePanelView/>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+  </Grid>
 </Window>

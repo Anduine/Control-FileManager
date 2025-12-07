@@ -3,142 +3,162 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodels="clr-namespace:ControlFileManager.UI.ViewModels"
              mc:Ignorable="d"
-             PreviewMouseDown="FilePanel_PreviewMouseDown">
-    
-    <DockPanel Margin="8 8 8 8">
-        <Grid DockPanel.Dock="Top" Margin="0 0 0 8">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+             d:DataContext="{d:DesignInstance Type=viewmodels:FilePanelViewModel}"
+             MouseUp="FilePanel_MouseUp"
+             KeyUp="FilePanel_KeyUp"
+             Loaded="FilePanelView_Loaded">
+  
+  <Grid>
+    <DockPanel Margin="4,8,4,8">
+      <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
 
-            <StackPanel Orientation="Horizontal" Grid.Column="0">
-                <Button Content="Back" Command="{Binding PrevDirCommand}" Width="60"/>
-                <Button Content="Next" Command="{Binding NextDirCommand}" Width="60" Margin="8 0 0 0"/>
-                <Button Content="Open" Command="{Binding OpenCommand}" Width="60" Margin="8 0 0 0"/>
-                <Button Content="Delete" Command="{Binding DeleteCommand}" Width="60" Margin="8 0 0 0"/>
-                <Button Content="New folder" Command="{Binding CreateFolderCommand}" Width="80" Margin="8 0 0 0"/>
-            </StackPanel>
+        <StackPanel Orientation="Horizontal" Grid.Column="0">
+          <Button Content="Back" Command="{Binding PrevDirCommand}" Width="60"/>
+          <Button Content="Next" Command="{Binding NextDirCommand}" Width="60" Margin="8,0,0,0"/>
+          <Button Content="Open" Command="{Binding OpenCommand}" Width="60" Margin="8,0,0,0"/>
+          <Button Content="Delete" Command="{Binding DeleteCommand}" Width="60" Margin="8,0,0,0"/>
+          <Button Content="New folder" Command="{Binding CreateFolderCommand}" Width="80" Margin="8,0,0,0"/>
+        </StackPanel>
 
-            <Button Grid.Column="1"
-                    Content="Refresh"
-                    Command="{Binding RefreshCommand}"
-                    MinWidth="70"
-                    HorizontalAlignment="Right" 
-                    Margin="8 0 0 0"/>
-        </Grid>
+        <Button Grid.Column="1"
+                Content="Refresh"
+                Command="{Binding RefreshDirCommand}"
+                MinWidth="70"
+                HorizontalAlignment="Right" 
+                Margin="8,0,0,0"/>
+      </Grid>
 
-        <Grid DockPanel.Dock="Top" Margin="0 0 0 8">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+      <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
-            <ComboBox Grid.Column="0"
+        <ComboBox Grid.Column="0"
                   ItemsSource="{Binding NavigationRoots}"
                   SelectedItem="{Binding SelectedRoot}"
                   DisplayMemberPath="Name"
                   Width="50"
-                  Margin="0 0 8 0" />
+                  Margin="0,0,8,0"/>
 
-            <TextBox Grid.Column="1"
+        <TextBox Grid.Column="1"
                  x:Name="CurrentPathTb"
                  Text="{Binding CurrentPath, Mode=OneWay}"
-                 KeyUp="CurrentPathTb_KeyUp" />
-        </Grid>
+                 KeyUp="CurrentPathTb_KeyUp"/>
+      </Grid>
 
-        <DataGrid x:Name="FilesGrid"
-                  ItemsSource="{Binding CurrentItems}" 
-                  SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
-                  MouseDoubleClick="FilesGrid_MouseDoubleClick"
-                  CellEditEnding="FilesGrid_CellEditEnding"
-                  PreviewKeyDown="FilesGrid_PreviewKeyDown"
-                  GridLinesVisibility="Horizontal"
-                  AutoGenerateColumns="False"
-                  CanUserAddRows="False"
-                  IsReadOnly="True">
+      <DataGrid x:Name="FilesGrid"
+                ItemsSource="{Binding CurrentItems}" 
+                SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
+                GridLinesVisibility="Horizontal"
+                AutoGenerateColumns="False"
+                CanUserAddRows="False"
+                RowHeaderWidth="0"
+                IsReadOnly="True"
+                
+                MouseDoubleClick="FilesGrid_MouseDoubleClick"
+                
+                DataContextChanged="FilesGrid_DataContextChanged"
+                ScrollViewer.ScrollChanged="FilesGrid_ScrollChanged">   
 
-            <DataGrid.ContextMenu>
-                <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+        <DataGrid.ContextMenu>
+          <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
 
-                    <ContextMenu.Resources>
-                        <!--  File/folder actions  -->
-                        <Style x:Key="ItemActions" TargetType="MenuItem">
-                            <Setter Property="Visibility" Value="Visible"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding SelectedItem}" Value="{x:Null}">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
+            <ContextMenu.Resources>
+              <!--  File/folder actions  -->
+              <Style x:Key="ItemActions" TargetType="MenuItem">
+                <Setter Property="Visibility" Value="Visible"/>
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding SelectedItem}" Value="{x:Null}">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                  </DataTrigger>
+                </Style.Triggers>
+              </Style>
 
-                        <!--  When NO selection (empty area) -->
-                        <Style x:Key="NoItemActions" TargetType="MenuItem">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding SelectedItem}" Value="{x:Null}">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
+              <!--  Empty area actions -->
+              <Style x:Key="NoItemActions" TargetType="MenuItem">
+                <Setter Property="Visibility" Value="Collapsed"/>
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding SelectedItem}" Value="{x:Null}">
+                    <Setter Property="Visibility" Value="Visible"/>
+                  </DataTrigger>
+                </Style.Triggers>
+              </Style>
 
-                    </ContextMenu.Resources>
+            </ContextMenu.Resources>
 
-                    <!--  File/folder actions  -->
-                    <MenuItem Header="Відкрити"
-          Style="{StaticResource ItemActions}"
-          Command="{Binding OpenCommand}"/>
+            <!--  File/folder actions  -->
+            <MenuItem Header="Відкрити"
+                Style="{StaticResource ItemActions}"
+                Command="{Binding OpenCommand}"/>
 
-                    <MenuItem Header="Копіювати"
-          Style="{StaticResource ItemActions}"
-          Command="{Binding CopyCommand}"/>
+            <MenuItem Header="Копіювати"
+                Style="{StaticResource ItemActions}"
+                Command="{Binding CopyCommand}"/>
 
-                    <MenuItem Header="Вирізати"
-          Style="{StaticResource ItemActions}"
-          Command="{Binding CutCommand}"/>
+            <MenuItem Header="Вирізати"
+                Style="{StaticResource ItemActions}"
+                Command="{Binding CutCommand}"/>
 
-                    <MenuItem Header="Видалити"
-          Style="{StaticResource ItemActions}"
-          Command="{Binding DeleteCommand}"/>
+            <MenuItem Header="Видалити"
+                Style="{StaticResource ItemActions}"
+                Command="{Binding DeleteCommand}"/>
 
-                    <MenuItem Header="Перейменувати"
-          Style="{StaticResource ItemActions}"
-          Command="{Binding RenameCommand}"/>
+            <MenuItem Header="Перейменувати"
+                Style="{StaticResource ItemActions}"
+                Command="{Binding RenameCommand}"/>
 
-                    <Separator/>
+            <Separator/>
 
-                    <MenuItem Header="Властивості"
-          Style="{StaticResource ItemActions}"
-          Command="{Binding ShowPropertiesCommand}"/>
+            <MenuItem Header="Властивості"
+                Style="{StaticResource ItemActions}"
+                Command="{Binding ShowPropertiesCommand}"/>
 
-                    <!--  When NO selection (empty area) -->
+            <!--  When NO selection (empty area) -->
 
-                    <MenuItem Header="Вставити"
-          Style="{StaticResource NoItemActions}"
-          Command="{Binding PasteCommand}"/>
+            <MenuItem Header="Вставити"
+                Style="{StaticResource NoItemActions}"
+                Command="{Binding PasteCommand}"/>
 
-                    <MenuItem Header="Створити папку"
-          Style="{StaticResource NoItemActions}"
-          Command="{Binding CreateFolderCommand}"/>
+            <MenuItem Header="Створити папку"
+                Style="{StaticResource NoItemActions}"
+                Command="{Binding CreateFolderCommand}"/>
 
-                    <MenuItem Header="Властивості"
-          Style="{StaticResource NoItemActions}"
-          Command="{Binding ShowPropertiesCommand}"/>
+            <MenuItem Header="Властивості"
+                Style="{StaticResource NoItemActions}"
+                Command="{Binding ShowPropertiesCommand}"/>
 
-                </ContextMenu>
-            </DataGrid.ContextMenu>
+          </ContextMenu>
+        </DataGrid.ContextMenu>
 
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Name"
-                                    Binding="{Binding Name}"
-                                    x:Name="Name"
-                                    IsReadOnly="False"
-                                    Width="*" MinWidth="44"/>
-                <DataGridTextColumn Header="Size" Binding="{Binding Size}" Width="100"/>
-                <DataGridTextColumn Header="Type" Binding="{Binding IsDirectory}" Width="40" MinWidth="30"/>
-                <DataGridTextColumn Header="Modified" Binding="{Binding LastModified}" Width="160" MinWidth="40"/>
-            </DataGrid.Columns>
-        </DataGrid>
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="Назва"
+                              Binding="{Binding Name}"
+                              x:Name="Name"
+                              IsReadOnly="False"
+                              Width="*" 
+                              MinWidth="44"/>
+          <DataGridTextColumn Header="Розмір" Binding="{Binding Size}" Width="100"/>
+          <DataGridTextColumn Header="Тип" Binding="{Binding IsDirectory}" Width="40" MinWidth="30"/>
+          <DataGridTextColumn Header="Дата зміни" Binding="{Binding LastModified}" Width="160" MinWidth="40"/>
+          <DataGridTextColumn Header="Дата створення" Binding="{Binding CreatedTime}" Width="160" MinWidth="40"/>
+        </DataGrid.Columns>
+      </DataGrid>
     </DockPanel>
+    <TextBox x:Name="RenameTb"
+             Panel.ZIndex="100"
+             Visibility="Collapsed"
+             LostKeyboardFocus="RenameTb_LostFocus"
+             KeyDown="RenameTb_KeyDown"
+             Width="100"
+             HorizontalAlignment="Left" 
+             VerticalAlignment="Top"/>
+  </Grid>
 </UserControl>
+  

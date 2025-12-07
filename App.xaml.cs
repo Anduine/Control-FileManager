@@ -5,17 +5,17 @@ using FileManager.Core.Services;
 
 namespace ControlFileManager
 {
-    public partial class ControlApp: Application
+  public partial class ControlApp : Application
+  {
+    protected override void OnStartup(StartupEventArgs e)
     {
-        protected override void OnStartup(StartupEventArgs e)
-        {
-            base.OnStartup(e);
+      base.OnStartup(e);
 
-            var fileService = new FileSystemService();
-            var mainVm = new MainViewModel(fileService);
+      var fileService = new FileSystemService();
+      var mainVm = new MainViewModel(fileService);
 
-            var mainWindow = new MainWindow(mainVm, fileService);
-            mainWindow.Show();
-        }
+      var mainWindow = new MainWindow(mainVm, fileService);
+      mainWindow.Show();
     }
+  }
 }
