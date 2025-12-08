@@ -19,4 +19,8 @@
     </Resource>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="src\UI\Themes\" />
+  </ItemGroup>
+
 </Project>

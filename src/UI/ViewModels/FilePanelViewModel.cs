@@ -29,14 +29,26 @@ namespace ControlFileManager.UI.ViewModels
     public bool ShowHidden
     {
       get => _showHidden;
-      set { _showHidden = value; Raise(); LoadDirectoryAsync(CurrentPath); }
+      set
+      {
+        _showHidden = value;
+        Raise();
+        if (CurrentPath != null)
+          LoadDirectoryAsync(CurrentPath);
+      }
     }
 
     private bool _showSystem;
     public bool ShowSystem
     {
       get => _showSystem;
-      set { _showSystem = value; Raise(); LoadDirectoryAsync(CurrentPath); }
+      set
+      {
+        _showSystem = value;
+        Raise();
+        if (CurrentPath != null)
+          LoadDirectoryAsync(CurrentPath);
+      }
     }
 
     private FileItem? _selectedRoot;
@@ -51,6 +63,7 @@ namespace ControlFileManager.UI.ViewModels
           NavigateTo(value.FullPath);
 
         CreateFolderCommand.RaiseCanExecuteChanged();
+        RefreshDirCommand.RaiseCanExecuteChanged();
       }
     }
 
@@ -97,7 +110,7 @@ namespace ControlFileManager.UI.ViewModels
       _fs = fs;
       _ops = ops;
 
-      RefreshDirCommand = new RelayCommand(_ => LoadDirectoryAsync(CurrentPath));
+      RefreshDirCommand = new RelayCommand(_ => LoadDirectoryAsync(CurrentPath), _ => SelectedRoot != null);
 
       OpenCommand = new RelayCommand(_ => _ops.Open(this), _ => SelectedItem != null);
       DeleteCommand = new RelayCommand(_ => _ops.DeleteAsync(this), _ => SelectedItem != null);
