@@ -1,0 +1,23 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <Style TargetType="TextBlock" x:Key="CTextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource TextColor}"/>
+    <Setter Property="FontSize" Value="14"/>
+    <Setter Property="FontFamily" Value="Franklin Gothic Book"/>
+  </Style>
+
+  <Style TargetType="TextBlock" BasedOn="{StaticResource CTextBlock}"/>
+
+  <Style TargetType="TextBox" x:Key="CTextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+    <Setter Property="Background" Value="{DynamicResource PanelBgColor}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextColor}"/>
+    <Setter Property="CaretBrush" Value="{DynamicResource TextColor}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+    <Setter Property="FontSize" Value="14"/>
+    <Setter Property="FontFamily" Value="Franklin Gothic Book"/>
+  </Style>
+
+  <Style TargetType="TextBox" BasedOn="{StaticResource CTextBox}"/>
+
+</ResourceDictionary>

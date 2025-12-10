@@ -55,6 +55,7 @@ namespace ControlFileManager.UI.Views
 
     private void FilePanel_MouseUp(object sender, MouseButtonEventArgs e)
     {
+      _vm.RequestActivation();
       switch (e.ChangedButton)
       {
         case MouseButton.XButton1:

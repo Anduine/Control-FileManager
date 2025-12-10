@@ -20,7 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="src\UI\Themes\" />
+    <Page Update="src\UI\Themes\Elements\CheckBox.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
 
 </Project>

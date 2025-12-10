@@ -92,7 +92,19 @@ namespace ControlFileManager.UI.ViewModels
       }
     }
 
+    private bool _isActive;
+    public bool IsActive
+    {
+      get => _isActive;
+      set
+      {
+        _isActive = value;
+        Raise();
+      }
+    }
+
     public event EventHandler<FileItem>? RenameRequest;
+    public event Action<FilePanelViewModel> ActivationRequested;
 
     public RelayCommand RefreshDirCommand { get; }
     public RelayCommand OpenCommand { get; }
@@ -126,7 +138,8 @@ namespace ControlFileManager.UI.ViewModels
       PrevDirCommand = new RelayCommand(_ => PrevDir(), _ => _backHistory.Count > 0);
       NextDirCommand = new RelayCommand(_ => NextDir(), _ => _forwardHistory.Count > 0);
 
-      RefreshRootsAsync();
+
+      _ = RefreshRootsAsync();
     }
 
     public void NavigateTo(string path)
@@ -185,6 +198,11 @@ namespace ControlFileManager.UI.ViewModels
       await _ops.RenameAsync(this, newName);
     }
 
+    public void RequestActivation()
+    {
+      ActivationRequested?.Invoke(this);
+    }
+
     private async Task RefreshRootsAsync()
     {
       _cts?.Cancel();
@@ -209,7 +227,7 @@ namespace ControlFileManager.UI.ViewModels
 
       _forwardHistory.Push(CurrentPath);
       CurrentPath = _backHistory.Pop();
-      LoadDirectoryAsync(CurrentPath);
+      _ = LoadDirectoryAsync(CurrentPath);
 
       PrevDirCommand.RaiseCanExecuteChanged();
       NextDirCommand.RaiseCanExecuteChanged();
@@ -222,7 +240,7 @@ namespace ControlFileManager.UI.ViewModels
 
       _backHistory.Push(CurrentPath);
       CurrentPath = _forwardHistory.Pop();
-      LoadDirectoryAsync(CurrentPath);
+      _ = LoadDirectoryAsync(CurrentPath);
 
       PrevDirCommand.RaiseCanExecuteChanged();
       NextDirCommand.RaiseCanExecuteChanged();

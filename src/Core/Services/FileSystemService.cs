@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using ControlFileManager.Core.Models;
@@ -241,6 +242,125 @@ namespace FileManager.Core.Services
         var newTargetDir = Path.Combine(targetDir, subDir.Name);
         CopyDirectoryRecursive(subDir.FullName, newTargetDir, overwrite);
       }
+    }
+
+    public async IAsyncEnumerable<FileItem> SearchAsync(SearchOptions options, [EnumeratorCancellation] CancellationToken ct)
+    {
+      var enumOptions = new EnumerationOptions
+      {
+        IgnoreInaccessible = true,
+        RecurseSubdirectories = options.IsRecursive,
+        AttributesToSkip = FileAttributes.ReparsePoint, // Пропуск сімлінки
+        MatchCasing = options.CaseSensitive ? MatchCasing.CaseSensitive : MatchCasing.CaseInsensitive
+      };
+
+      // Паттерн пошуку. Якщо пустий - усі файли "*"
+      string pattern = string.IsNullOrWhiteSpace(options.NamePattern) ? "*" : options.NamePattern;
+
+      if (!pattern.Contains("*") && !pattern.Contains("?"))
+      {
+        pattern = $"*{pattern}*";
+      }
+
+      // 1. Получаем перечислитель файлов (ленивое выполнение)
+      // ВАЖНО: Directory.EnumerateFiles не возвращает массив, она дает итератор.
+      var fileSystemIterator = Directory.EnumerateFileSystemEntries(options.RootPath, pattern, enumOptions);
+
+      foreach (var path in fileSystemIterator)
+      {
+        if (ct.IsCancellationRequested) yield break;
+
+        // Попытка определить, файл это или папка
+        bool isDirectory;
+        try
+        {
+          // Получаем атрибуты, чтобы понять тип элемента
+          var attrs = File.GetAttributes(path);
+          isDirectory = attrs.HasFlag(FileAttributes.Directory);
+        }
+        catch (Exception)
+        {
+          // Если не удалось прочитать атрибуты (файл удалили во время поиска или нет доступа), пропускаем
+          continue;
+        }
+
+        if (isDirectory)
+        {
+          // --- ЛОГИКА ДЛЯ ПАПОК ---
+
+          // Если мы ищем текст ВНУТРИ файлов, папки нам, скорее всего, не нужны.
+          // (Если вы хотите возвращать папки, даже когда ищете текст, уберите эту проверку)
+          if (!string.IsNullOrEmpty(options.ContentText)) continue;
+
+          var dirInfo = new DirectoryInfo(path);
+          yield return new FileItem
+          {
+            Name = dirInfo.Name,
+            FullPath = dirInfo.FullName,
+            IsDirectory = true,
+            Size = null, // У папок нет размера в привычном понимании
+            LastModified = dirInfo.LastWriteTime,
+            CreatedTime = dirInfo.CreationTime
+          };
+        }
+        else
+        {
+          // --- ЛОГИКА ДЛЯ ФАЙЛОВ ---
+
+          var fileInfo = new FileInfo(path);
+
+          // Если нужно искать по содержимому
+          if (!string.IsNullOrEmpty(options.ContentText))
+          {
+            // Сначала отсекаем по размеру
+            if (fileInfo.Length > options.MaxContentSize) continue;
+
+            // Проверяем содержимое
+            bool contentMatch = await ContainsTextAsync(path, options.ContentText, options.CaseSensitive, ct);
+            if (!contentMatch) continue;
+          }
+
+          yield return new FileItem
+          {
+            Name = fileInfo.Name,
+            FullPath = fileInfo.FullName,
+            IsDirectory = false,
+            Size = fileInfo.Length,
+            LastModified = fileInfo.LastWriteTime,
+            CreatedTime = fileInfo.CreationTime
+          };
+        }
+      }
+    }
+
+    private async Task<bool> ContainsTextAsync(string filePath, string searchText, bool caseSensitive, CancellationToken ct)
+    {
+      try
+      {
+        using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, true);
+        using var reader = new StreamReader(stream);
+
+        string line;
+        var comparison = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+
+        while ((line = await reader.ReadLineAsync(ct)) != null)
+        {
+          if (line.Contains(searchText, comparison))
+          {
+            return true;
+          }
+        }
+      }
+      catch (IOException)
+      {
+        return false;
+      }
+      catch (UnauthorizedAccessException)
+      {
+        return false;
+      }
+
+      return false;
     }
   }
 }

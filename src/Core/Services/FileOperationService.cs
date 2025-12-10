@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-
+using ControlFileManager.Core.Models;
 using ControlFileManager.UI.ViewModels;
 
 namespace ControlFileManager.Core.Services
@@ -11,6 +13,10 @@ namespace ControlFileManager.Core.Services
   public class FileOperationService
   {
     private readonly IFileSystemService _fs;
+
+    private CancellationTokenSource? _searchCts;
+
+    public bool IsSearching { get; set; }
 
     public FileOperationService(IFileSystemService fs)
     {
@@ -143,6 +149,73 @@ namespace ControlFileManager.Core.Services
         UseShellExecute = true
       };
       Process.Start(psi);
+    }
+
+    public async Task StartSearch(FilePanelViewModel panel, SearchOptions options)
+    {
+      if (IsSearching) return;
+
+      IsSearching = true;
+      _searchCts = new CancellationTokenSource();
+      var token = _searchCts.Token;
+
+      try
+      {
+        panel.CurrentItems.Clear();
+
+        await Task.Run(async () =>
+        {
+          var foundFiles = new List<FileItem>();
+
+          await foreach (var item in _fs.SearchAsync(options, token))
+          {
+            foundFiles.Add(item);
+
+            if (foundFiles.Count >= 10)
+            {
+              UpdateUi(panel, foundFiles);
+              foundFiles = new List<FileItem>();
+            }
+          }
+
+          if (foundFiles.Count > 0)
+          {
+            UpdateUi(panel, foundFiles);
+          }
+
+        }, token);
+      }
+      catch (OperationCanceledException)
+      {
+        // Поиск отменен
+      }
+      catch (Exception ex)
+      {
+        MessageBox.Show("Помилка пошуку: " + ex.Message);
+      }
+      finally
+      {
+        IsSearching = false;
+        _searchCts?.Dispose();
+        _searchCts = null;
+      }
+    }
+
+    public void CancelSearch()
+    {
+      _searchCts?.Cancel();
+    }
+
+    private void UpdateUi(FilePanelViewModel panel, List<FileItem> itemsToAdd)
+    {
+      // Application.Current.Dispatcher.Invoke заставляет код выполняться в UI-потоке
+      Application.Current.Dispatcher.Invoke(() =>
+      {
+        foreach (var item in itemsToAdd)
+        {
+          panel.CurrentItems.Add(item);
+        }
+      });
     }
   }
 }

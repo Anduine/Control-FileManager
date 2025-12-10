@@ -34,12 +34,13 @@
                   IsChecked="{Binding ShowSystem, Mode=TwoWay}" />
       </MenuItem>
       
-      <MenuItem Header="_Правка">
-        <MenuItem Header="Пусто" />
+      <MenuItem Header="_Команди">
+        <MenuItem Header="Пошук" Command="{Binding OpenSearchDialogCommand}" />
       </MenuItem>
       
       <MenuItem Header="_Вид">
-        <MenuItem Header="Пусто" />
+        <MenuItem Header="Тема" Command="{Binding ChangeTheme}">
+        </MenuItem>
       </MenuItem>
     </Menu>
 

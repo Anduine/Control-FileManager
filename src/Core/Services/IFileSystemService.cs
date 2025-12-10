@@ -14,5 +14,6 @@ namespace ControlFileManager.Core.Services
     Task CopyAsync(string sourcePath, string destinationPath, bool overwrite = false, CancellationToken ct = default);
     Task MoveAsync(string sourcePath, string destinationPath, CancellationToken ct = default);
     Task<FileItem> RenameAsync(string oldFullPath, string newName, CancellationToken ct = default);
+    IAsyncEnumerable<FileItem> SearchAsync(SearchOptions options, CancellationToken ct);
   }
 }

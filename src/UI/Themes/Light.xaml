@@ -4,7 +4,17 @@
   <SolidColorBrush x:Key="WindowBgColor" Color="#FFFFFF"/>
   <SolidColorBrush x:Key="PanelBgColor" Color="#F0F0F0"/>
   <SolidColorBrush x:Key="TextColor" Color="#000000"/>
-  <SolidColorBrush x:Key="SelectionColor" Color="#CCE8FF"/>
-  <SolidColorBrush x:Key="BorderColor" Color="#CCCCCC"/>
+  <SolidColorBrush x:Key="TextDisabledColor" Color="#FF707070"/>
+  <SolidColorBrush x:Key="BorderColor" Color="Gray"/>
+
+
+  <SolidColorBrush x:Key="AccentColor" Color="#FFD65636"/>
+
+  <SolidColorBrush x:Key="HoverColor" Color="#FFF0552E"/>
+  <SolidColorBrush x:Key="SelectionColor" Color="#FFD65636"/>
+  <SolidColorBrush x:Key="SelectionText" Color="#FFE0E0E0"/>
+
+  <SolidColorBrush x:Key="GridHeaderBgColor" Color="#FF888890"/>
+  <SolidColorBrush x:Key="GridLineColor" Color="#FF3F3F46"/>
 
 </ResourceDictionary>
