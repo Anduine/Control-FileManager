@@ -39,7 +39,7 @@ namespace ControlFileManager.UI.Views
       RenameTb.SelectAll();
     }
 
-    private void FilePanelView_Loaded(object sender, RoutedEventArgs e)
+    private void FilePanel_Loaded(object sender, RoutedEventArgs e)
     {
       _vm = DataContext as FilePanelViewModel;
       if (_vm != null)
@@ -53,9 +53,11 @@ namespace ControlFileManager.UI.Views
       }
     }
 
-    private void FilePanel_MouseUp(object sender, MouseButtonEventArgs e)
+    private void FilePanel_PreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
       _vm.RequestActivation();
+      FilesGrid.Focus();
+
       switch (e.ChangedButton)
       {
         case MouseButton.XButton1:
@@ -75,13 +77,12 @@ namespace ControlFileManager.UI.Views
       }
     }
 
-    private void FilePanel_KeyUp(object sender, KeyEventArgs e)
+    private void FilePanel_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-      if (e.Key == Key.F2 && _vm?.SelectedItem != null)
-      {
-        StartRename(_vm.SelectedItem);
-        e.Handled = true;
-      }
+      //switch (e.Key)
+      //{
+
+      //}
     }
 
     private void CurrentPathTb_KeyUp(object sender, KeyEventArgs e)
@@ -108,6 +109,82 @@ namespace ControlFileManager.UI.Views
     {
       if (RenameTb.Visibility == Visibility.Visible)
         FinishRename(false);
+    }
+
+    private void FilesGrid_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+      switch (e.Key)
+      {
+        case Key.F2:
+          e.Handled = true;
+          if (_vm?.SelectedItem == null) return;
+
+          StartRename(_vm.SelectedItem);
+          break;
+
+        case Key.Tab:
+          e.Handled = true;
+          if (FilesGrid.Items.Count == 0) return;
+
+          bool isShiftPressed = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
+          int direction = isShiftPressed ? -1 : 1;
+
+          int newIndex = FilesGrid.SelectedIndex + direction;
+
+          moveSelection(newIndex);
+          break;
+
+        case Key.Escape:
+
+          if (FilesGrid.SelectedItems.Count > 0)
+          {
+            e.Handled = true;
+
+            FilesGrid.SelectedItem = null;
+            _vm.SelectedItem = null;
+            return;
+          }
+
+          break;
+
+        case Key.Up:
+          e.Handled = true;
+          moveSelection(FilesGrid.SelectedIndex - 1);
+          break;
+
+        case Key.Down:
+          e.Handled = true;
+          moveSelection(FilesGrid.SelectedIndex + 1);
+          break;
+
+        case Key.Enter:
+          e.Handled = true;
+          if (_vm?.OpenCommand.CanExecute(null) == true)
+          {
+            _vm.OpenCommand.Execute(null);
+          }
+          break;
+      }
+    }
+
+    private void moveSelection(int newIndex)
+    {
+      if (newIndex >= 0 && newIndex < FilesGrid.Items.Count)
+      {
+        FilesGrid.SelectedIndex = newIndex;
+
+        FilesGrid.ScrollIntoView(FilesGrid.SelectedItem);
+
+        var row = (DataGridRow)FilesGrid.ItemContainerGenerator.ContainerFromIndex(newIndex);
+        if (row != null)
+        {
+          row.Focus();
+        }
+        else
+        {
+          FilesGrid.Focus();
+        }
+      }
     }
 
     private void RenameTb_KeyDown(object sender, KeyEventArgs e)

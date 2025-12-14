@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -213,6 +214,13 @@ namespace ControlFileManager.UI.ViewModels
         var drives = await _fs.GetDrivesAsync(_cts.Token);
         foreach (var d in drives)
           NavigationRoots.Add(d);
+
+        if (SelectedRoot == null && NavigationRoots.Count > 0)
+        {
+          var defaultRoot = NavigationRoots.First();
+
+          SelectedRoot = defaultRoot;
+        }
       }
       catch (Exception ex)
       {
@@ -222,8 +230,7 @@ namespace ControlFileManager.UI.ViewModels
 
     private void PrevDir()
     {
-      if (_backHistory.Count == 0)
-        return;
+      if (_backHistory.Count == 0) return;
 
       _forwardHistory.Push(CurrentPath);
       CurrentPath = _backHistory.Pop();
@@ -235,8 +242,7 @@ namespace ControlFileManager.UI.ViewModels
 
     private void NextDir()
     {
-      if (_forwardHistory.Count == 0)
-        return;
+      if (_forwardHistory.Count == 0) return;
 
       _backHistory.Push(CurrentPath);
       CurrentPath = _forwardHistory.Pop();

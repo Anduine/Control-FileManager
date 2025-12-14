@@ -6,12 +6,12 @@
              xmlns:viewmodels="clr-namespace:ControlFileManager.UI.ViewModels"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=viewmodels:FilePanelViewModel}"
-             MouseUp="FilePanel_MouseUp"
-             KeyUp="FilePanel_KeyUp"
-             Loaded="FilePanelView_Loaded">
+             PreviewMouseDown="FilePanel_PreviewMouseDown"
+             PreviewKeyDown="FilePanel_PreviewKeyDown"
+             Loaded="FilePanel_Loaded">
 
     <Grid>
-      <Border Margin="2,8,2,2" BorderThickness="2" CornerRadius="2">
+      <Border Margin="2,8,2,2" BorderThickness="2">
         <Border.Style>
           <Style TargetType="Border">
             <Setter Property="BorderBrush" Value="Transparent"/>
@@ -68,24 +68,27 @@
         </Grid>
 
         <DataGrid x:Name="FilesGrid"
-                ItemsSource="{Binding CurrentItems}" 
-                SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
-                GridLinesVisibility="Horizontal"
-                AutoGenerateColumns="False"
-                CanUserAddRows="False"
-                RowHeaderWidth="0"
-                IsReadOnly="True"
+                  ItemsSource="{Binding CurrentItems}" 
+                  SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
+                  GridLinesVisibility="Horizontal"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  RowHeaderWidth="0"
+                  IsReadOnly="True"
+                  
+                  KeyboardNavigation.TabNavigation="Once"
                 
-                MouseDoubleClick="FilesGrid_MouseDoubleClick"
-                DataContextChanged="FilesGrid_DataContextChanged"
-                ScrollViewer.ScrollChanged="FilesGrid_ScrollChanged">
+                  PreviewKeyDown="FilesGrid_PreviewKeyDown"
+                  MouseDoubleClick="FilesGrid_MouseDoubleClick"
+                  DataContextChanged="FilesGrid_DataContextChanged"
+                  ScrollViewer.ScrollChanged="FilesGrid_ScrollChanged">
 
           <DataGrid.ContextMenu>
-            <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+            <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}" Style="{StaticResource ContextMenuStyle}">
 
               <ContextMenu.Resources>
                 <!--  File/folder actions  -->
-                <Style x:Key="ItemActions" TargetType="MenuItem">
+                <Style x:Key="ItemActions" TargetType="MenuItem" BasedOn="{StaticResource ContextMenuItemStyle}">
                   <Setter Property="Visibility" Value="Visible"/>
                   <Style.Triggers>
                     <DataTrigger Binding="{Binding SelectedItem}" Value="{x:Null}">
@@ -95,7 +98,7 @@
                 </Style>
 
                 <!--  Empty area actions -->
-                <Style x:Key="NoItemActions" TargetType="MenuItem">
+                <Style x:Key="NoItemActions" TargetType="MenuItem" BasedOn="{StaticResource ContextMenuItemStyle}">
                   <Setter Property="Visibility" Value="Collapsed"/>
                   <Style.Triggers>
                     <DataTrigger Binding="{Binding SelectedItem}" Value="{x:Null}">
@@ -152,11 +155,11 @@
 
           <DataGrid.Columns>
             <DataGridTextColumn Header="Назва"
-                              Binding="{Binding Name}"
-                              x:Name="Name"
-                              IsReadOnly="False"
-                              Width="*" 
-                              MinWidth="44"/>
+                                Binding="{Binding Name}"
+                                x:Name="Name"
+                                IsReadOnly="False"
+                                Width="*" 
+                                MinWidth="44"/>
             <DataGridTextColumn Header="Розмір" Binding="{Binding Size}" Width="90"/>
             <DataGridTextColumn Header="Тип" Binding="{Binding IsDirectory}" Width="44" MinWidth="40"/>
             <DataGridTextColumn Header="Дата зміни" Binding="{Binding LastModified, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" 
