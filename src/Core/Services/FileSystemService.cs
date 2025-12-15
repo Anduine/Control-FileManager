@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using ControlFileManager.Core.Models;
 using ControlFileManager.Core.Services;
 
-namespace FileManager.Core.Services
+namespace ControlFileManager.Core.Services
 {
   public class FileSystemService : IFileSystemService
   {
@@ -28,7 +28,6 @@ namespace FileManager.Core.Services
 
         return (IEnumerable<FileItem>)drives.ToList();
       }, ct);
-
 
     public Task<IEnumerable<FileItem>> GetDirectoryItemsAsync(
       string path,
@@ -111,6 +110,29 @@ namespace FileManager.Core.Services
         Directory.CreateDirectory(Path.Combine(parentPath, name));
       }, ct);
 
+    public Task CreateFileAsync(string parentPath, string name, CancellationToken ct = default) =>
+    Task.Run(() =>
+    {
+      string fullPath = Path.Combine(parentPath, name);
+
+      try
+      {
+
+        if (!File.Exists(fullPath))
+        {
+          File.Create(fullPath).Dispose();
+        }
+        else
+        {
+          throw new IOException("File with this name already exist.");
+        }
+      }
+      catch (Exception)
+      {
+        throw;
+      }
+    }, ct);
+
     public Task DeleteAsync(string path, CancellationToken ct = default) =>
       Task.Run(() =>
       {
@@ -127,7 +149,9 @@ namespace FileManager.Core.Services
         destinationPath = Path.GetFullPath(destinationPath);
 
         if (Directory.Exists(sourcePath) && destinationPath.StartsWith(sourcePath, StringComparison.OrdinalIgnoreCase))
+        {
           throw new InvalidOperationException("Unable to copy directory inside itself.");
+        }
 
         if (Directory.Exists(sourcePath))
         {
@@ -225,7 +249,9 @@ namespace FileManager.Core.Services
     private void CopyDirectoryRecursive(string sourceDir, string targetDir, bool overwrite)
     {
       if (targetDir.StartsWith(sourceDir, StringComparison.OrdinalIgnoreCase))
+      {
         throw new InvalidOperationException("Unable to copy directory inside itself.");
+      }
 
       var di = new DirectoryInfo(sourceDir);
       if (!Directory.Exists(targetDir))
@@ -262,34 +288,25 @@ namespace FileManager.Core.Services
         pattern = $"*{pattern}*";
       }
 
-      // 1. Получаем перечислитель файлов (ленивое выполнение)
-      // ВАЖНО: Directory.EnumerateFiles не возвращает массив, она дает итератор.
       var fileSystemIterator = Directory.EnumerateFileSystemEntries(options.RootPath, pattern, enumOptions);
 
       foreach (var path in fileSystemIterator)
       {
         if (ct.IsCancellationRequested) yield break;
 
-        // Попытка определить, файл это или папка
         bool isDirectory;
         try
         {
-          // Получаем атрибуты, чтобы понять тип элемента
           var attrs = File.GetAttributes(path);
           isDirectory = attrs.HasFlag(FileAttributes.Directory);
         }
         catch (Exception)
         {
-          // Если не удалось прочитать атрибуты (файл удалили во время поиска или нет доступа), пропускаем
           continue;
         }
 
         if (isDirectory)
         {
-          // --- ЛОГИКА ДЛЯ ПАПОК ---
-
-          // Если мы ищем текст ВНУТРИ файлов, папки нам, скорее всего, не нужны.
-          // (Если вы хотите возвращать папки, даже когда ищете текст, уберите эту проверку)
           if (!string.IsNullOrEmpty(options.ContentText)) continue;
 
           var dirInfo = new DirectoryInfo(path);
@@ -298,24 +315,19 @@ namespace FileManager.Core.Services
             Name = dirInfo.Name,
             FullPath = dirInfo.FullName,
             IsDirectory = true,
-            Size = null, // У папок нет размера в привычном понимании
+            Size = null,
             LastModified = dirInfo.LastWriteTime,
             CreatedTime = dirInfo.CreationTime
           };
         }
         else
         {
-          // --- ЛОГИКА ДЛЯ ФАЙЛОВ ---
-
           var fileInfo = new FileInfo(path);
 
-          // Если нужно искать по содержимому
           if (!string.IsNullOrEmpty(options.ContentText))
           {
-            // Сначала отсекаем по размеру
             if (fileInfo.Length > options.MaxContentSize) continue;
 
-            // Проверяем содержимое
             bool contentMatch = await ContainsTextAsync(path, options.ContentText, options.CaseSensitive, ct);
             if (!contentMatch) continue;
           }

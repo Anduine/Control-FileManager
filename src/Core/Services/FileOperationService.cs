@@ -45,7 +45,7 @@ namespace ControlFileManager.Core.Services
       }
       catch (Exception ex)
       {
-        MessageBox.Show("Не вдалося відкрити: " + ex.Message);
+        MessageBox.Show("При відкритті виникла помилка: " + ex.Message, "Помилка відкриття");
       }
     }
 
@@ -54,7 +54,7 @@ namespace ControlFileManager.Core.Services
       var item = panel.SelectedItem;
       if (item == null) return;
 
-      var ok = MessageBox.Show($"Видалити {item.Name}?", "Підтвердження", MessageBoxButton.YesNo) == MessageBoxResult.Yes;
+      var ok = MessageBox.Show($"Видалити \"{item.Name}\"?", "Підтвердження", MessageBoxButton.YesNo) == MessageBoxResult.Yes;
       if (!ok) return;
 
       try
@@ -64,7 +64,7 @@ namespace ControlFileManager.Core.Services
       }
       catch (Exception ex)
       {
-        MessageBox.Show("Помилка видалення: " + ex.Message);
+        MessageBox.Show("При видаленні виникла помилка:\n " + ex.Message, "Помилка видалення");
       }
     }
 
@@ -85,6 +85,7 @@ namespace ControlFileManager.Core.Services
     public async Task CreateFolderAsync(FilePanelViewModel panel)
     {
       if (panel.SelectedRoot == null) return;
+
       const string name = "Нова папка";
 
       try
@@ -94,7 +95,26 @@ namespace ControlFileManager.Core.Services
       }
       catch (Exception ex)
       {
-        MessageBox.Show("Помилка створення папки: " + ex.Message);
+        MessageBox.Show("При створенні директорії виникла помилка:\n " + ex.Message, "Помилка створення папки");
+      }
+    }
+
+    public async Task CreateFileAsync(FilePanelViewModel panel)
+    {
+      if (panel.SelectedRoot == null) return;
+
+      string baseName = "Новий файл";
+      string extension = ".txt";
+      string finalName = baseName + extension;
+
+      try
+      {
+        await _fs.CreateFileAsync(panel.CurrentPath, finalName);
+        await panel.LoadDirectoryAsync(panel.CurrentPath);
+      }
+      catch (Exception ex)
+      {
+        MessageBox.Show("При створенні файлу виникла помилка:\n " + ex.Message, "Помилка створення файлу");
       }
     }
 
@@ -130,7 +150,7 @@ namespace ControlFileManager.Core.Services
       }
       catch (Exception ex)
       {
-        MessageBox.Show("Помилка вставки: " + ex.Message);
+        MessageBox.Show("При спробі вставки виникла помилка:\n " + ex.Message, "Помилка вставки");
       }
     }
 
@@ -187,11 +207,11 @@ namespace ControlFileManager.Core.Services
       }
       catch (OperationCanceledException)
       {
-        // Поиск отменен
+        // Пошук скасовано
       }
       catch (Exception ex)
       {
-        MessageBox.Show("Помилка пошуку: " + ex.Message);
+        MessageBox.Show("При виконанні пошуку виникла помилка:\n " + ex.Message, "Помилка пошуку");
       }
       finally
       {
@@ -208,7 +228,7 @@ namespace ControlFileManager.Core.Services
 
     private void UpdateUi(FilePanelViewModel panel, List<FileItem> itemsToAdd)
     {
-      // Application.Current.Dispatcher.Invoke заставляет код выполняться в UI-потоке
+      // Application.Current.Dispatcher.Invoke - код виконується в UI-потоці
       Application.Current.Dispatcher.Invoke(() =>
       {
         foreach (var item in itemsToAdd)

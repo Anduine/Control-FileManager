@@ -10,6 +10,7 @@ namespace ControlFileManager.Core.Services
     Task<IEnumerable<FileItem>> GetDrivesAsync(CancellationToken ct = default);
     Task<IEnumerable<FileItem>> GetDirectoryItemsAsync(string path, bool showHidden, bool showSystem, CancellationToken ct = default);
     Task CreateDirectoryAsync(string parentPath, string name, CancellationToken ct = default);
+    Task CreateFileAsync(string parentPath, string name, CancellationToken ct = default);
     Task DeleteAsync(string path, CancellationToken ct = default);
     Task CopyAsync(string sourcePath, string destinationPath, bool overwrite = false, CancellationToken ct = default);
     Task MoveAsync(string sourcePath, string destinationPath, CancellationToken ct = default);

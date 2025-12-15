@@ -64,6 +64,7 @@ namespace ControlFileManager.UI.ViewModels
           NavigateTo(value.FullPath);
 
         CreateFolderCommand.RaiseCanExecuteChanged();
+        CreateFileCommand.RaiseCanExecuteChanged();
         RefreshDirCommand.RaiseCanExecuteChanged();
       }
     }
@@ -111,6 +112,7 @@ namespace ControlFileManager.UI.ViewModels
     public RelayCommand OpenCommand { get; }
     public RelayCommand DeleteCommand { get; }
     public RelayCommand CreateFolderCommand { get; }
+    public RelayCommand CreateFileCommand { get; }
     public RelayCommand ShowPropertiesCommand { get; }
     public RelayCommand RenameCommand { get; }
     public RelayCommand CopyCommand { get; }
@@ -129,6 +131,8 @@ namespace ControlFileManager.UI.ViewModels
       DeleteCommand = new RelayCommand(_ => _ops.DeleteAsync(this), _ => SelectedItem != null);
 
       CreateFolderCommand = new RelayCommand(_ => _ops.CreateFolderAsync(this), _ => SelectedRoot != null);
+      CreateFileCommand = new RelayCommand(_ => _ops.CreateFileAsync(this), _ => SelectedRoot != null);
+
       ShowPropertiesCommand = new RelayCommand(_ => _ops.ShowPropertiesWindow(this), _ => SelectedItem != null);
       RenameCommand = new RelayCommand(_ => RequestRename(), _ => SelectedItem != null);
 

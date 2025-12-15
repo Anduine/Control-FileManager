@@ -56,7 +56,6 @@ namespace ControlFileManager.UI.Views
     private void FilePanel_PreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
       _vm.RequestActivation();
-      FilesGrid.Focus();
 
       switch (e.ChangedButton)
       {
@@ -111,6 +110,11 @@ namespace ControlFileManager.UI.Views
         FinishRename(false);
     }
 
+    private void FilesGrid_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+      FilesGrid.Focus();
+    }
+
     private void FilesGrid_PreviewKeyDown(object sender, KeyEventArgs e)
     {
       switch (e.Key)
@@ -145,6 +149,14 @@ namespace ControlFileManager.UI.Views
             return;
           }
 
+          break;
+
+        case Key.Delete:
+          e.Handled = true;
+          if (_vm?.DeleteCommand.CanExecute(null) == true)
+          {
+            _vm.DeleteCommand.Execute(null);
+          }
           break;
 
         case Key.Up:

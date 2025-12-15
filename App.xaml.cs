@@ -1,7 +1,8 @@
 ﻿using System.Windows;
+
+using ControlFileManager.Core.Services;
 using ControlFileManager.Main;
 using ControlFileManager.UI.ViewModels;
-using FileManager.Core.Services;
 
 namespace ControlFileManager
 {

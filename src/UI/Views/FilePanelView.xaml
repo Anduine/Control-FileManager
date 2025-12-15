@@ -37,6 +37,7 @@
             <Button Content="Open" Command="{Binding OpenCommand}" Width="60" Margin="8,0,0,0"/>
             <Button Content="Delete" Command="{Binding DeleteCommand}" Width="60" Margin="8,0,0,0"/>
             <Button Content="New folder" Command="{Binding CreateFolderCommand}" Width="90" Margin="8,0,0,0"/>
+            <Button Content="New file" Command="{Binding CreateFileCommand}" Width="90" Margin="8,0,0,0"/>
           </StackPanel>
 
           <Button Grid.Column="1"
@@ -79,6 +80,7 @@
                   KeyboardNavigation.TabNavigation="Once"
                 
                   PreviewKeyDown="FilesGrid_PreviewKeyDown"
+                  PreviewMouseDown="FilesGrid_PreviewMouseDown"
                   MouseDoubleClick="FilesGrid_MouseDoubleClick"
                   DataContextChanged="FilesGrid_DataContextChanged"
                   ScrollViewer.ScrollChanged="FilesGrid_ScrollChanged">
@@ -141,6 +143,10 @@
               <MenuItem Header="Вставити"
                 Style="{StaticResource NoItemActions}"
                 Command="{Binding PasteCommand}"/>
+
+              <MenuItem Header="Створити файл"
+                Style="{StaticResource NoItemActions}"
+                Command="{Binding CreateFileCommand}"/>
 
               <MenuItem Header="Створити папку"
                 Style="{StaticResource NoItemActions}"

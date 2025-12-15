@@ -1,6 +1,10 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+  <ResourceDictionary.MergedDictionaries>
+    <ResourceDictionary Source="Shared.xaml"/>
+  </ResourceDictionary.MergedDictionaries>
+  
   <Style x:Key="CCheckBox" TargetType="CheckBox">
     <Setter Property="Foreground" Value="{DynamicResource TextColor}"/>
     <Setter Property="Background" Value="Transparent"/>
@@ -19,15 +23,16 @@
 
             <Border x:Name="Border" 
                     Grid.Column="0"
-                    Width="18" Height="18"
                     Background="{TemplateBinding Background}"
                     BorderBrush="{TemplateBinding BorderBrush}"
                     BorderThickness="{TemplateBinding BorderThickness}"
                     CornerRadius="2"
-                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                    Width="18" Height="18">
+
 
               <Path x:Name="OptionMark" 
-                  Data="M 3,8 L 6,11 L 13,4" 
+                  Data="{StaticResource CheckmarkGeometry}" 
                   Stroke="{DynamicResource SelectionText}" 
                   StrokeThickness="2"
                   Opacity="0"
@@ -36,13 +41,13 @@
             </Border>
 
             <ContentPresenter x:Name="Presenter" 
-                            Grid.Column="1" 
-                            Content="{TemplateBinding Content}"
-                            ContentTemplate="{TemplateBinding ContentTemplate}"
-                            Margin="{TemplateBinding Padding}"
-                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                            RecognizesAccessKey="True"/>
+                              Grid.Column="1" 
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              Margin="{TemplateBinding Padding}"
+                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                              RecognizesAccessKey="True"/>
           </Grid>
 
           <ControlTemplate.Triggers>
