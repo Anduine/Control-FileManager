@@ -20,16 +20,13 @@ namespace ControlFileManager.Core.Services
     {
       var appResources = Application.Current.Resources;
 
-      // 1. Очищаем все словари (и стили, и цвета)
       appResources.MergedDictionaries.Clear();
 
-      // 2. Добавляем обратно СТИЛИ (Controls.xaml)
       appResources.MergedDictionaries.Add(new ResourceDictionary
       {
         Source = new Uri(ControlsSource, UriKind.Relative)
       });
 
-      // 3. Добавляем нужный ЦВЕТ
       string colorSource = theme == ThemeType.Light ? LightSource : DarkSource;
       appResources.MergedDictionaries.Add(new ResourceDictionary
       {

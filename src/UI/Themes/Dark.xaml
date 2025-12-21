@@ -11,7 +11,7 @@
   <SolidColorBrush x:Key="AccentColor" Color="#FFEDD8D3"/>
   <SolidColorBrush x:Key="HoverColor" Color="#FFF0552E"/>
   
-  <SolidColorBrush x:Key="SelectionColor" Color="#FFD65636"/>
+  <SolidColorBrush x:Key="SelectionColor" Color="#FFB53D1F"/>
   <SolidColorBrush x:Key="SelectionText" Color="#FFE0E0E0"/>
 
   <SolidColorBrush x:Key="GridHeaderBgColor" Color="#FF2D2D30"/>

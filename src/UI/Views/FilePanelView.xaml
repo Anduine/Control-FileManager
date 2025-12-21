@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:converters="clr-namespace:ControlFileManager.UI.Converters"
              xmlns:viewmodels="clr-namespace:ControlFileManager.UI.ViewModels"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=viewmodels:FilePanelViewModel}"
@@ -10,14 +11,19 @@
              PreviewKeyDown="FilePanel_PreviewKeyDown"
              Loaded="FilePanel_Loaded">
 
-    <Grid>
+  <UserControl.Resources>
+    <converters:FileSizeConverter x:Key="FileSizeConverter"/>
+    <converters:FileTypeConverter x:Key="FileTypeConverter"/>
+  </UserControl.Resources>
+
+  <Grid>
       <Border Margin="2,8,2,2" BorderThickness="2">
         <Border.Style>
           <Style TargetType="Border">
             <Setter Property="BorderBrush" Value="Transparent"/>
 
             <Style.Triggers>
-              <DataTrigger Binding="{Binding IsActive}" Value="True">
+              <DataTrigger Binding="{Binding IsPanelActive}" Value="True">
               <Setter Property="BorderBrush" Value="{DynamicResource AccentColor}"/>
               </DataTrigger>
             </Style.Triggers>
@@ -32,20 +38,34 @@
           </Grid.ColumnDefinitions>
 
           <StackPanel Orientation="Horizontal" Grid.Column="0">
-            <Button Content="Back" Command="{Binding PrevDirCommand}" Width="60"/>
-            <Button Content="Next" Command="{Binding NextDirCommand}" Width="60" Margin="8,0,0,0"/>
-            <Button Content="Open" Command="{Binding OpenCommand}" Width="60" Margin="8,0,0,0"/>
-            <Button Content="Delete" Command="{Binding DeleteCommand}" Width="60" Margin="8,0,0,0"/>
-            <Button Content="New folder" Command="{Binding CreateFolderCommand}" Width="90" Margin="8,0,0,0"/>
-            <Button Content="New file" Command="{Binding CreateFileCommand}" Width="90" Margin="8,0,0,0"/>
+            <Button Command="{Binding PrevDirCommand}" ToolTip="Назад"
+                    ContentTemplate="{StaticResource IconLeftArrowTemplate}"/>
+            <Button Command="{Binding NextDirCommand}" ToolTip="Вперед" Margin="8,0,0,0"
+                    ContentTemplate="{StaticResource IconRightArrowTemplate}"/>
+            <Button Command="{Binding OpenCommand}" ToolTip="Відкрити" Margin="8,0,0,0"
+                    ContentTemplate="{StaticResource IconOpenTemplate}"/>
+            <Button Command="{Binding CopyCommand}" ToolTip="Копіювати" Margin="8,0,0,0"
+                    ContentTemplate="{StaticResource IconCopyTemplate}"/>
+            <Button Command="{Binding CutCommand}" ToolTip="Вирізати" Margin="8,0,0,0"
+                    ContentTemplate="{StaticResource IconCutTemplate}"/>
+            <Button Command="{Binding PasteCommand}" ToolTip="Вставити" Margin="8,0,0,0"
+                    ContentTemplate="{StaticResource IconClipboardTemplate}"/>
+            <Button Command="{Binding DeleteCommand}" Content="Видалити" Margin="8,0,0,0"
+                    ContentTemplate="{StaticResource IconDeleteTemplate}"/>
+            <Button Command="{Binding RenameCommand}" ToolTip="Перейменувати" Margin="8,0,0,0"
+                    ContentTemplate="{StaticResource IconRenameTemplate}"/>
+            <Button Command="{Binding CreateFolderCommand}" ToolTip="Нова папка" Margin="8,0,0,0"
+                    ContentTemplate="{StaticResource IconAddFolderTemplate}"/>
+            <Button Content="New file" Command="{Binding CreateFileCommand}" ToolTip="Новий файл" Margin="8,0,0,0"
+                    ContentTemplate="{StaticResource IconAddFileTemplate}"/>
           </StackPanel>
 
           <Button Grid.Column="1"
-                  Content="Refresh"
                   Command="{Binding RefreshDirCommand}"
-                  MinWidth="70"
                   HorizontalAlignment="Right" 
-                  Margin="8,0,0,0"/>
+                  Margin="8,0,0,0"
+                  ToolTip="Оновити папку"
+                  ContentTemplate="{StaticResource IconRefreshTemplate}"/>
         </Grid>
 
         <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
@@ -83,7 +103,8 @@
                   PreviewMouseDown="FilesGrid_PreviewMouseDown"
                   MouseDoubleClick="FilesGrid_MouseDoubleClick"
                   DataContextChanged="FilesGrid_DataContextChanged"
-                  ScrollViewer.ScrollChanged="FilesGrid_ScrollChanged">
+                  ScrollViewer.ScrollChanged="FilesGrid_ScrollChanged"
+                  SelectionChanged="FilesGrid_SelectionChanged">
 
           <DataGrid.ContextMenu>
             <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}" Style="{StaticResource ContextMenuStyle}">
@@ -166,12 +187,11 @@
                                 IsReadOnly="False"
                                 Width="*" 
                                 MinWidth="44"/>
-            <DataGridTextColumn Header="Розмір" Binding="{Binding Size}" Width="90"/>
-            <DataGridTextColumn Header="Тип" Binding="{Binding IsDirectory}" Width="44" MinWidth="40"/>
-            <DataGridTextColumn Header="Дата зміни" Binding="{Binding LastModified, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" 
+            <DataGridTextColumn Header="Розмір" Binding="{Binding Size, Converter={StaticResource FileSizeConverter}}" Width="70"/>
+            <DataGridTextColumn Header="Тип" Binding="{Binding Converter={StaticResource FileTypeConverter}}" Width="110"/>
+            <DataGridTextColumn Header="Дата зміни" Binding="{Binding LastWriteTime, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" 
                                 Width="160" MinWidth="40"/>
-            <DataGridTextColumn Header="Дата створення" Binding="{Binding CreatedTime, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" 
-                                Width="160" MinWidth="40"/>
+            
           </DataGrid.Columns>
         </DataGrid>
       </DockPanel>

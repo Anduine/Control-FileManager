@@ -9,6 +9,7 @@
           <ResourceDictionary Source="/src/UI/Themes/Elements/Controls.xaml"/>
 
           <ResourceDictionary Source="/src/UI/Themes/Dark.xaml"/>
+          <ResourceDictionary Source="/src/UI/Themes/Elements/Geometry.xaml"/>
         </ResourceDictionary.MergedDictionaries>
       </ResourceDictionary>
   </Application.Resources>

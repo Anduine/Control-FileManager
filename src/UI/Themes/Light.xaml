@@ -5,12 +5,12 @@
   <SolidColorBrush x:Key="PanelBgColor" Color="#F0F0F0"/>
   <SolidColorBrush x:Key="TextColor" Color="#000000"/>
   <SolidColorBrush x:Key="TextDisabledColor" Color="#FF707070"/>
+  
   <SolidColorBrush x:Key="BorderColor" Color="Gray"/>
 
-
   <SolidColorBrush x:Key="AccentColor" Color="#FFD65636"/>
-
-  <SolidColorBrush x:Key="HoverColor" Color="#FFF0552E"/>
+  <SolidColorBrush x:Key="HoverColor" Color="#FFEDD8D3"/>
+  
   <SolidColorBrush x:Key="SelectionColor" Color="#FFD65636"/>
   <SolidColorBrush x:Key="SelectionText" Color="#FFE0E0E0"/>
 

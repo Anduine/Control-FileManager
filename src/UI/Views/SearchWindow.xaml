@@ -4,24 +4,23 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:ControlFileManager.UI.ViewModels"
-        mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:SearchViewModel}"
+        mc:Ignorable="d"
         Title="Пошук" 
-        Height="360" Width="450"
+        Height="400" Width="450"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="{DynamicResource WindowBgColor}"
         Foreground="{DynamicResource TextColor}">
 
   <Window.Resources>
-    <Style TargetType="TextBlock" BasedOn="{StaticResource CTextBlock}">
+    <Style TargetType="TextBlock" BasedOn="{StaticResource Control-TextBlock}">
       <Setter Property="Margin" Value="0,0,0,5"/>
-      <Setter Property="Foreground" Value="{DynamicResource TextColor}"/>
     </Style>
-    <Style TargetType="TextBox" BasedOn="{StaticResource CTextBox}">
+    <Style TargetType="TextBox" BasedOn="{StaticResource Control-TextBox}">
       <Setter Property="Margin" Value="0,0,0,10"/>
     </Style>
-    <Style TargetType="CheckBox">
+    <Style TargetType="CheckBox" BasedOn="{StaticResource Control-CheckBox}">
       <Setter Property="Margin" Value="0,0,0,10"/>
     </Style>
   </Window.Resources>
@@ -31,14 +30,16 @@
       <TextBlock Text="Де розпочинати пошук:"/>
       <TextBox Text="{Binding SearchPath, Mode=TwoWay}"/>
 
-      <TextBlock Text="Ім'я файлу (маска, наприклад *.txt):"/>
+      <TextBlock Text="Ім'я файлу (*.txt або regex):"/>
       <TextBox Text="{Binding NamePattern, Mode=TwoWay}"/>
 
-      <TextBlock Text="Текст всередині файлу (опціонально):"/>
-      <TextBox Text="{Binding ContentText, Mode=TwoWay}"/>
-
+      <CheckBox IsChecked="{Binding UseFuzzy, Mode=TwoWay}" Content="Інтелектуальний пошук"/>
       <CheckBox IsChecked="{Binding IsRecursive, Mode=TwoWay}" Content="Шукати у вкладених каталогах"/>
       <CheckBox IsChecked="{Binding CaseSensitive, Mode=TwoWay}" Content="Враховувати регістр"/>
+      <CheckBox IsChecked="{Binding SearchInside, Mode=TwoWay}" Content="Шукати всередині файлів"/>
+
+      <TextBlock Text="Текст всередині файлу:" IsEnabled="{Binding SearchInside}"/>
+      <TextBox Text="{Binding ContentText, Mode=TwoWay}" IsEnabled="{Binding SearchInside}"/>
 
       <Grid Margin="0,15,0,0">
         <Grid.ColumnDefinitions>

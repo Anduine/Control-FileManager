@@ -1,12 +1,15 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using ControlFileManager.Core.Models;
 using ControlFileManager.UI.ViewModels;
+using ControlFileManager.UI.Views;
 
 namespace ControlFileManager.Core.Services
 {
@@ -51,21 +54,33 @@ namespace ControlFileManager.Core.Services
 
     public async void DeleteAsync(FilePanelViewModel panel)
     {
-      var item = panel.SelectedItem;
-      if (item == null) return;
+      var items = panel.SelectedItems.ToList();
+      if (items.Count == 0) return;
 
-      var ok = MessageBox.Show($"Видалити \"{item.Name}\"?", "Підтвердження", MessageBoxButton.YesNo) == MessageBoxResult.Yes;
-      if (!ok) return;
+      if (items.Count == 1)
+      {
+        var ok = MessageBox.Show($"Видалити \"{items[0].Name}\"?", "Підтвердження", MessageBoxButton.YesNo) == MessageBoxResult.Yes;
+        if (!ok) return;
+      }
+      else if (items.Count > 1)
+      {
+        var ok = MessageBox.Show($"Видалити {items.Count} елементів?", "Підтвердження", MessageBoxButton.YesNo) == MessageBoxResult.Yes;
+        if (!ok) return;
+      }
 
       try
       {
-        await _fs.DeleteAsync(item.FullPath);
+        foreach (var item in items)
+        {
+          await _fs.DeleteAsync(item.FullPath);
+        }
         await panel.LoadDirectoryAsync(panel.CurrentPath);
       }
       catch (Exception ex)
       {
         MessageBox.Show("При видаленні виникла помилка:\n " + ex.Message, "Помилка видалення");
       }
+      return;
     }
 
     public async Task RenameAsync(FilePanelViewModel panel, string newName)
@@ -120,55 +135,95 @@ namespace ControlFileManager.Core.Services
 
     public void Copy(FilePanelViewModel panel)
     {
-      if (panel.SelectedItem == null) return;
-
-      Clipboard.SetData("FileDrop", new string[] { panel.SelectedItem.FullPath });
+      SetClipboardData(panel, isCut: false);
     }
 
     public void Cut(FilePanelViewModel panel)
     {
-      if (panel.SelectedItem == null) return;
-
-      Clipboard.SetData("FileDrop", new string[] { panel.SelectedItem.FullPath });
+      SetClipboardData(panel, isCut: true);
     }
 
     public async Task PasteAsync(FilePanelViewModel panel)
     {
-      if (panel.SelectedRoot == null) return;
-      if (!Clipboard.ContainsData("FileDrop")) return;
+      if (panel.SelectedRoot == null || string.IsNullOrEmpty(panel.CurrentPath)) return;
+      if (!Clipboard.ContainsFileDropList()) return;
 
-      var files = Clipboard.GetData("FileDrop") as string[];
-      if (files == null || files.Length == 0) return;
+      var files = Clipboard.GetFileDropList();
+      if (files == null || files.Count == 0) return;
 
-      string src = files[0];
-      string dst = Path.Combine(panel.CurrentPath, Path.GetFileName(src));
+      bool isMoveOperation = false;
+
+      var data = Clipboard.GetDataObject();
+      if (data != null && data.GetDataPresent("Preferred DropEffect"))
+      {
+        using (var stream = data.GetData("Preferred DropEffect") as MemoryStream)
+        {
+          if (stream != null)
+          {
+            byte[] bytes = stream.ToArray();
+            // Якщо перший байт = 2, це Move
+            if (bytes.Length > 0 && bytes[0] == 2)
+            {
+              isMoveOperation = true;
+            }
+          }
+        }
+      }
 
       try
       {
-        await _fs.CopyAsync(src, dst);
+        foreach (string srcPath in files)
+        {
+          string fileName = Path.GetFileName(srcPath);
+          string destPath = Path.Combine(panel.CurrentPath, fileName);
+
+          // Захист від копіювання "сам у себе"
+          if (string.Equals(srcPath, destPath, StringComparison.OrdinalIgnoreCase))
+          {
+            continue;
+          }
+
+          if (isMoveOperation)
+          {
+            await _fs.MoveAsync(srcPath, destPath);
+          }
+          else
+          {
+            await _fs.CopyAsync(srcPath, destPath);
+          }
+        }
+
+        if (isMoveOperation)
+        {
+          Clipboard.Clear();
+        }
+
         await panel.LoadDirectoryAsync(panel.CurrentPath);
       }
       catch (Exception ex)
       {
-        MessageBox.Show("При спробі вставки виникла помилка:\n " + ex.Message, "Помилка вставки");
+        MessageBox.Show("При вставці виникла помилка:\n " + ex.Message, "Помилка вставки");
       }
     }
 
     public bool ClipboardContainsPath()
     {
-      return Clipboard.ContainsData("FileDrop");
+      return Clipboard.ContainsFileDropList();
     }
 
     public void ShowPropertiesWindow(FilePanelViewModel panel)
     {
       if (panel.SelectedItem == null) return;
 
-      var psi = new ProcessStartInfo("explorer.exe")
+      var propWindow = new PropertiesWindow(panel.SelectedItem)
       {
-        Arguments = $"/select,\"{panel.SelectedItem.FullPath}\"",
-        UseShellExecute = true
+        Owner = Application.Current.MainWindow
       };
-      Process.Start(psi);
+
+      propWindow.ShowDialog();
+
+      if (panel.RefreshDirCommand.CanExecute(null))
+        panel.RefreshDirCommand.Execute(null);
     }
 
     public async Task StartSearch(FilePanelViewModel panel, SearchOptions options)
@@ -236,6 +291,33 @@ namespace ControlFileManager.Core.Services
           panel.CurrentItems.Add(item);
         }
       });
+    }
+
+    private void SetClipboardData(FilePanelViewModel panel, bool isCut)
+    {
+      var items = panel.SelectedItems.Any()
+          ? panel.SelectedItems.ToList() : new List<FileItem>();
+
+      if (items.Count == 0) return;
+
+      var paths = new System.Collections.Specialized.StringCollection();
+      foreach (var item in items)
+      {
+        paths.Add(item.FullPath);
+      }
+
+      var data = new DataObject();
+
+      data.SetFileDropList(paths);
+
+      // 2 = Move (Cut), 5 = Copy (1) | Link (4)
+      byte[] moveEffect = new byte[] { 2, 0, 0, 0 };
+      byte[] copyEffect = new byte[] { 5, 0, 0, 0 };
+
+      MemoryStream dropEffect = new MemoryStream(isCut ? moveEffect : copyEffect);
+      data.SetData("Preferred DropEffect", dropEffect);
+
+      Clipboard.SetDataObject(data, true);
     }
   }
 }

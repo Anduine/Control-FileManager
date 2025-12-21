@@ -179,6 +179,11 @@ namespace ControlFileManager.UI.Views
       }
     }
 
+    private void FilesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+      _vm.UpdateSelection(FilesGrid.SelectedItems);
+    }
+
     private void moveSelection(int newIndex)
     {
       if (newIndex >= 0 && newIndex < FilesGrid.Items.Count)
@@ -213,7 +218,7 @@ namespace ControlFileManager.UI.Views
 
     private void RenameTb_LostFocus(object sender, RoutedEventArgs e)
     {
-      FinishRename(false);
+      FinishRename(true);
     }
 
     private void FinishRename(bool confirm)

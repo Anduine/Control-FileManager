@@ -4,8 +4,8 @@
   <ResourceDictionary.MergedDictionaries>
     <ResourceDictionary Source="Shared.xaml"/>
   </ResourceDictionary.MergedDictionaries>
-  
-  <Style x:Key="CCheckBox" TargetType="CheckBox">
+
+  <Style x:Key="Control-CheckBox" TargetType="CheckBox">
     <Setter Property="Foreground" Value="{DynamicResource TextColor}"/>
     <Setter Property="Background" Value="Transparent"/>
     <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>

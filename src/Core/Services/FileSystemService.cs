@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using ControlFileManager.Core.Models;
@@ -23,7 +24,7 @@ namespace ControlFileManager.Core.Services
                                 FullPath = d.RootDirectory.FullName,
                                 IsDirectory = true,
                                 Size = null,
-                                LastModified = d.RootDirectory.LastWriteTime
+                                LastWriteTime = d.RootDirectory.LastWriteTime
                               });
 
         return (IEnumerable<FileItem>)drives.ToList();
@@ -41,61 +42,42 @@ namespace ControlFileManager.Core.Services
           var list = new List<FileItem>();
           var dirInfo = new DirectoryInfo(path);
 
-          // directories
-          foreach (var d in dirInfo.EnumerateDirectories())
+          foreach (var i in dirInfo.EnumerateFileSystemInfos())
           {
             if (ct.IsCancellationRequested) break;
-
-            var attrs = d.Attributes;
+            var attrs = i.Attributes;
 
             bool isHidden = attrs.HasFlag(FileAttributes.Hidden);
             bool isSystem = attrs.HasFlag(FileAttributes.System);
             bool isReadOnly = attrs.HasFlag(FileAttributes.ReadOnly);
+            bool isArchive = attrs.HasFlag(FileAttributes.Archive);
 
             if (!showHidden && isHidden) continue;
             if (!showSystem && isSystem) continue;
 
             list.Add(new FileItem
             {
-              Name = d.Name,
-              FullPath = d.FullName,
-              IsDirectory = true,
-              Size = null,
-              CreatedTime = d.CreationTime,
-              LastModified = d.LastWriteTime,
+              Name = i.Name,
+              FullPath = i.FullName,
+              IsDirectory = i.Attributes.HasFlag(FileAttributes.Directory),
+              Size = i.Attributes.HasFlag(FileAttributes.Directory) ? null : (i as FileInfo)?.Length,
+              CreationTime = i.CreationTime,
+              LastWriteTime = i.LastWriteTime,
+              LastAccessTime = i.LastAccessTime,
               IsHidden = isHidden,
               IsSystem = isSystem,
-              IsReadOnly = isReadOnly
+              IsReadOnly = isReadOnly,
+              IsArchive = isArchive
             });
           }
 
-          // files
-          foreach (var f in dirInfo.EnumerateFiles())
+          list.Sort((a, b) =>
           {
-            if (ct.IsCancellationRequested) break;
+            if (a.IsDirectory && !b.IsDirectory) return -1;
+            if (!a.IsDirectory && b.IsDirectory) return 1;
+            return string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+          });
 
-            var attrs = f.Attributes;
-
-            bool isHidden = attrs.HasFlag(FileAttributes.Hidden);
-            bool isSystem = attrs.HasFlag(FileAttributes.System);
-            bool isReadOnly = attrs.HasFlag(FileAttributes.ReadOnly);
-
-            if (!showHidden && isHidden) continue;
-            if (!showSystem && isSystem) continue;
-
-            list.Add(new FileItem
-            {
-              Name = f.Name,
-              FullPath = f.FullName,
-              IsDirectory = false,
-              Size = f.Length,
-              CreatedTime = f.CreationTime,
-              LastModified = f.LastWriteTime,
-              IsHidden = isHidden,
-              IsSystem = isSystem,
-              IsReadOnly = isReadOnly
-            });
-          }
           return (IEnumerable<FileItem>)list;
         }
         catch (DirectoryNotFoundException)
@@ -117,7 +99,6 @@ namespace ControlFileManager.Core.Services
 
       try
       {
-
         if (!File.Exists(fullPath))
         {
           File.Create(fullPath).Dispose();
@@ -227,8 +208,9 @@ namespace ControlFileManager.Core.Services
           FullPath = di.FullName,
           IsDirectory = true,
           Size = null,
-          LastModified = di.LastWriteTime,
-          CreatedTime = di.CreationTime
+          LastWriteTime = di.LastWriteTime,
+          CreationTime = di.CreationTime,
+          LastAccessTime = di.LastAccessTime,
         };
       }
       else
@@ -240,8 +222,9 @@ namespace ControlFileManager.Core.Services
           FullPath = fi.FullName,
           IsDirectory = false,
           Size = fi.Length,
-          LastModified = fi.LastWriteTime,
-          CreatedTime = fi.CreationTime
+          LastWriteTime = fi.LastWriteTime,
+          CreationTime = fi.CreationTime,
+          LastAccessTime = fi.LastAccessTime,
         };
       }
     }
@@ -280,69 +263,123 @@ namespace ControlFileManager.Core.Services
         MatchCasing = options.CaseSensitive ? MatchCasing.CaseSensitive : MatchCasing.CaseInsensitive
       };
 
-      // Паттерн пошуку. Якщо пустий - усі файли "*"
-      string pattern = string.IsNullOrWhiteSpace(options.NamePattern) ? "*" : options.NamePattern;
-
-      if (!pattern.Contains("*") && !pattern.Contains("?"))
+      string sysPattern = "*";
+      if (!options.UseRegex && !options.UseFuzzy && !string.IsNullOrWhiteSpace(options.Querry))
       {
-        pattern = $"*{pattern}*";
+        sysPattern = options.Querry.Contains('*') ? options.Querry : $"*{options.Querry}*";
       }
 
-      var fileSystemIterator = Directory.EnumerateFileSystemEntries(options.RootPath, pattern, enumOptions);
+      var fileSystemIterator = new DirectoryInfo(options.RootPath)
+                                    .EnumerateFileSystemInfos(sysPattern, enumOptions);
 
-      foreach (var path in fileSystemIterator)
+      foreach (var info in fileSystemIterator)
       {
         if (ct.IsCancellationRequested) yield break;
 
-        bool isDirectory;
-        try
-        {
-          var attrs = File.GetAttributes(path);
-          isDirectory = attrs.HasFlag(FileAttributes.Directory);
-        }
-        catch (Exception)
+        if ((options.UseRegex || options.UseFuzzy) && !IsNameMatch(info.Name, options))
         {
           continue;
         }
 
-        if (isDirectory)
-        {
-          if (!string.IsNullOrEmpty(options.ContentText)) continue;
+        bool isDir = (info.Attributes & FileAttributes.Directory) != 0;
+        long? size = null;
 
-          var dirInfo = new DirectoryInfo(path);
-          yield return new FileItem
-          {
-            Name = dirInfo.Name,
-            FullPath = dirInfo.FullName,
-            IsDirectory = true,
-            Size = null,
-            LastModified = dirInfo.LastWriteTime,
-            CreatedTime = dirInfo.CreationTime
-          };
-        }
-        else
+        if (!isDir)
         {
-          var fileInfo = new FileInfo(path);
+          var fi = (FileInfo)info;
+          size = fi.Length;
 
           if (!string.IsNullOrEmpty(options.ContentText))
           {
-            if (fileInfo.Length > options.MaxContentSize) continue;
+            if (size > options.MaxContentSize) continue;
 
-            bool contentMatch = await ContainsTextAsync(path, options.ContentText, options.CaseSensitive, ct);
+            bool contentMatch = await ContainsTextAsync(info.FullName, options.ContentText, options.CaseSensitive, ct);
             if (!contentMatch) continue;
           }
+        }
+        else if (!string.IsNullOrEmpty(options.ContentText))
+        {
+          continue;
+        }
 
-          yield return new FileItem
-          {
-            Name = fileInfo.Name,
-            FullPath = fileInfo.FullName,
-            IsDirectory = false,
-            Size = fileInfo.Length,
-            LastModified = fileInfo.LastWriteTime,
-            CreatedTime = fileInfo.CreationTime
-          };
+        yield return new FileItem
+        {
+          Name = info.Name,
+          FullPath = info.FullName,
+          IsDirectory = isDir,
+          Size = size,
+          LastWriteTime = info.LastWriteTime,
+          CreationTime = info.CreationTime,
+          LastAccessTime = info.LastAccessTime,
+          IsHidden = (info.Attributes & FileAttributes.Hidden) != 0,
+          IsSystem = (info.Attributes & FileAttributes.System) != 0,
+          IsReadOnly = (info.Attributes & FileAttributes.ReadOnly) != 0,
+          IsArchive = (info.Attributes & FileAttributes.Archive) != 0
+        };
+      }
+    }
+
+    private bool IsNameMatch(string fileName, SearchOptions options)
+    {
+      if (string.IsNullOrEmpty(options.Querry)) return true;
+
+      if (options.UseRegex)
+      {
+        try
+        {
+          return Regex.IsMatch(fileName, options.Querry, RegexOptions.IgnoreCase);
+        }
+        catch (ArgumentException)
+        {
+          return false;
         }
       }
+
+      if (options.UseFuzzy)
+      {
+        string fName = fileName.ToLower();
+        string query = options.Querry.Trim().ToLower();
+
+        if (!query.Contains('.'))
+        {
+          fName = Path.GetFileNameWithoutExtension(fileName).ToLower();
+        }
+
+        if (fName.Contains(query))
+          return true;
+
+        if (Math.Abs(fName.Length - query.Length) > options.FuzzyTolerance)
+          return false;
+
+        return ComputeLevenshteinDistance(fName, query) <= options.FuzzyTolerance;
+      }
+
+      return fileName.Contains(options.Querry, options.CaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static int ComputeLevenshteinDistance(string s, string t)
+    {
+      if (string.IsNullOrEmpty(s)) return string.IsNullOrEmpty(t) ? 0 : t.Length;
+      if (string.IsNullOrEmpty(t)) return s.Length;
+
+      int n = s.Length;
+      int m = t.Length;
+      int[,] d = new int[n + 1, m + 1];
+
+      for (int i = 0; i <= n; d[i, 0] = i++) ;
+      for (int j = 0; j <= m; d[0, j] = j++) ;
+
+      for (int i = 1; i <= n; i++)
+      {
+        for (int j = 1; j <= m; j++)
+        {
+          int cost = (t[j - 1] == s[i - 1]) ? 0 : 1;
+          d[i, j] = Math.Min(
+              Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
+              d[i - 1, j - 1] + cost);
+        }
+      }
+      return d[n, m];
     }
 
     private async Task<bool> ContainsTextAsync(string filePath, string searchText, bool caseSensitive, CancellationToken ct)

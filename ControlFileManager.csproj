@@ -11,10 +11,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="Assets\eye.ico" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Resource Include="Assets\eye.ico">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>

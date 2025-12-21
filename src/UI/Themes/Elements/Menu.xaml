@@ -56,7 +56,7 @@
                         CornerRadius="3"
                         Width="16" Height="16"
                         Margin="4,0,6,0">
-                  <Path Data="{StaticResource CheckmarkGeometry}" Stroke="{DynamicResource TextColor}" StrokeThickness="2" 
+                  <Path Data="{StaticResource CheckmarkGeometry}" Stroke="{DynamicResource SelectionText}" StrokeThickness="2" 
                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
 

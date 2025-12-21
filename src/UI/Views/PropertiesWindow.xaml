@@ -1,0 +1,83 @@
+﻿<Window x:Class="ControlFileManager.UI.Views.PropertiesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ControlFileManager.UI.Views"
+        xmlns:vm="clr-namespace:ControlFileManager.UI.ViewModels"
+        d:DataContext="{d:DesignInstance Type=vm:PropertiesViewModel}"
+        mc:Ignorable="d"
+        Title="Властивості" 
+        Height="430" Width="400"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource WindowBgColor}"
+        Foreground="{DynamicResource TextColor}">
+
+  <Window.Resources>
+    <Style TargetType="CheckBox" BasedOn="{StaticResource Control-CheckBox}" />
+  </Window.Resources>
+  
+  <Grid Margin="16">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+
+    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10">
+      <TextBlock Text="📄" FontSize="32" Margin="0,0,15,0" VerticalAlignment="Center"/>
+      <TextBox Text="{Binding Name}" IsReadOnly="True" BorderThickness="0" Background="Transparent" 
+                     VerticalAlignment="Center" FontWeight="Bold" FontSize="16" TextWrapping="Wrap"/>
+    </StackPanel>
+
+    <Separator Grid.Row="1" Margin="5,5"/>
+
+    <Grid Grid.Row="2" Margin="10">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="100"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+      </Grid.RowDefinitions>
+
+      <TextBlock Text="Розташування:" Grid.Row="0"/>
+      <TextBlock Text="{Binding FullPath}" Grid.Row="0" Grid.Column="1" TextWrapping="Wrap" Margin="0,0,0,5"/>
+
+      <TextBlock Text="Розмір:" Grid.Row="1"/>
+      <TextBlock Text="{Binding SizeText}" Grid.Row="1" Grid.Column="1" Margin="0,0,0,5"/>
+
+      <TextBlock Text="Створен:" Grid.Row="2"/>
+      <TextBlock Text="{Binding CreationTime}" Grid.Row="2" Grid.Column="1" Margin="0,0,0,5"/>
+
+      <TextBlock Text="Змінен:" Grid.Row="3"/>
+      <TextBlock Text="{Binding LastWriteTime}" Grid.Row="3" Grid.Column="1" Margin="0,0,0,5"/>
+      
+      <TextBlock Text="Відкритий:" Grid.Row="4"/>
+      <TextBlock Text="{Binding LastAccessTime}" Grid.Row="4" Grid.Column="1" Margin="0,0,0,5"/>
+    </Grid>
+
+    <Separator Grid.Row="3" Margin="5,5"/>
+
+    <StackPanel Grid.Row="4" Margin="10">
+      <CheckBox Content="Тільки читання" IsChecked="{Binding IsReadOnly}" Margin="0,2"/>
+      <CheckBox Content="Архівний" IsChecked="{Binding IsArchive}" Margin="0,2"/>
+      <CheckBox Content="Прихований" IsChecked="{Binding IsHidden}" Margin="0,2"/>
+      <CheckBox Content="Системний" IsChecked="{Binding IsSystem}" Margin="0,2"/>
+    </StackPanel>
+
+    <StackPanel Grid.Row="6" Margin="10" Orientation="Horizontal" HorizontalAlignment="Right">
+      <Button Content="Ок" Width="75" Margin="0,0,10,0" Click="OkButton_Click" IsDefault="True"/>
+      <Button Content="Відміна" Width="75" Click="CancelButton_Click" IsCancel="True"/>
+    </StackPanel>
+  </Grid>
+</Window>

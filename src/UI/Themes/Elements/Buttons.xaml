@@ -12,8 +12,8 @@
         <ControlTemplate TargetType="Button">
           <Border x:Name="border"
                 Background="{TemplateBinding Background}"
-                BorderBrush="{TemplateBinding BorderBrush}"
-                BorderThickness="{TemplateBinding BorderThickness}"
+                BorderBrush="{DynamicResource AccentColor}"
+                BorderThickness="1"
                 CornerRadius="2">
             <ContentPresenter HorizontalAlignment="Center" 
                               VerticalAlignment="Center"
@@ -22,11 +22,11 @@
 
           <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-              <Setter TargetName="border" Property="Background" Value="{DynamicResource HoverColor}"/>
+              <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource HoverColor}"/>
             </Trigger>
 
             <Trigger Property="IsPressed" Value="True">
-              <Setter TargetName="border" Property="Background" Value="{DynamicResource SelectionColor}"/>
+              <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource SelectionColor}"/>
             </Trigger>
 
             <Trigger Property="IsEnabled" Value="False">

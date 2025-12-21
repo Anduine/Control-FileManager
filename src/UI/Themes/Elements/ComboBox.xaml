@@ -1,7 +1,9 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  
+  
 
-  <Style TargetType="ComboBox">
+  <Style x:Key="Control-ComboBox" TargetType="ComboBox">
     <Setter Property="Foreground" Value="{DynamicResource TextColor}"/>
     <Setter Property="Background" Value="{DynamicResource PanelBgColor}"/>
     <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
@@ -53,6 +55,8 @@
       </Setter.Value>
     </Setter>
   </Style>
+
+  <Style TargetType="ComboBox" BasedOn="{StaticResource Control-ComboBox}"/>
 
   <Style TargetType="ComboBoxItem">
     <Setter Property="Foreground" Value="{DynamicResource TextColor}"/>

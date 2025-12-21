@@ -89,6 +89,8 @@ namespace ControlFileManager.UI.ViewModels
         Owner = Application.Current.MainWindow
       };
 
+      _ops.CancelSearch();
+
       bool? result = searchWindow.ShowDialog();
 
       if (result == true && searchVm.ResultOptions != null)
@@ -121,14 +123,14 @@ namespace ControlFileManager.UI.ViewModels
     {
       if (ActivePanel != null)
       {
-        ActivePanel.IsActive = false;
+        ActivePanel.IsPanelActive = false;
       }
 
       ActivePanel = panel;
 
       if (ActivePanel != null)
       {
-        ActivePanel.IsActive = true;
+        ActivePanel.IsPanelActive = true;
       }
 
       RemovePanelCommand.RaiseCanExecuteChanged();

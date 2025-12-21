@@ -13,12 +13,28 @@ namespace ControlFileManager.UI.ViewModels
     public string ContentText { get; set; }
     public bool IsRecursive { get; set; } = true;
     public bool CaseSensitive { get; set; } = false;
+    public bool UseRegex { get; set; } = false;
+    public bool UseFuzzy { get; set; } = false;
+
+    private bool _searchInside;
+    public bool SearchInside
+    {
+      get => _searchInside;
+      set
+      {
+        if (_searchInside != value)
+        {
+          _searchInside = value;
+          Raise();
+        }
+      }
+    }
 
     public SearchOptions ResultOptions { get; private set; }
 
     public event Action RequestClose;
 
-    public ICommand ConfirmCommand { get; }
+    public RelayCommand ConfirmCommand { get; }
 
     public SearchViewModel(string initialPath)
     {
@@ -33,10 +49,12 @@ namespace ControlFileManager.UI.ViewModels
       ResultOptions = new SearchOptions
       {
         RootPath = SearchPath,
-        NamePattern = NamePattern,
-        ContentText = ContentText,
+        Querry = NamePattern,
+        ContentText = ContentText = SearchInside ? ContentText : string.Empty,
         IsRecursive = IsRecursive,
-        CaseSensitive = CaseSensitive
+        CaseSensitive = CaseSensitive,
+        UseRegex = UseRegex,
+        UseFuzzy = UseFuzzy
       };
 
       RequestClose?.Invoke();

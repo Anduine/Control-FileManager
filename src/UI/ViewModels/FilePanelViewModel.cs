@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -22,6 +23,7 @@ namespace ControlFileManager.UI.ViewModels
 
     public ObservableCollection<FileItem> NavigationRoots { get; } = new();
     public ObservableCollection<FileItem> CurrentItems { get; } = new();
+    public ObservableCollection<FileItem> SelectedItems { get; } = new();
 
     private readonly Stack<string> _backHistory = new();
     private readonly Stack<string> _forwardHistory = new();
@@ -91,16 +93,17 @@ namespace ControlFileManager.UI.ViewModels
       {
         _currentPath = value;
         Raise();
+        _ops.CancelSearch();
       }
     }
 
-    private bool _isActive;
-    public bool IsActive
+    private bool _isPanelActive;
+    public bool IsPanelActive
     {
-      get => _isActive;
+      get => _isPanelActive;
       set
       {
-        _isActive = value;
+        _isPanelActive = value;
         Raise();
       }
     }
@@ -206,6 +209,24 @@ namespace ControlFileManager.UI.ViewModels
     public void RequestActivation()
     {
       ActivationRequested?.Invoke(this);
+    }
+
+    public void UpdateSelection(IList items)
+    {
+      SelectedItems.Clear();
+      foreach (var item in items)
+      {
+        if (item is FileItem fileItem)
+        {
+          SelectedItems.Add(fileItem);
+        }
+      }
+
+      DeleteCommand.RaiseCanExecuteChanged();
+      CopyCommand.RaiseCanExecuteChanged();
+      CutCommand.RaiseCanExecuteChanged();
+      PasteCommand.RaiseCanExecuteChanged();
+      RenameCommand.RaiseCanExecuteChanged();
     }
 
     private async Task RefreshRootsAsync()
